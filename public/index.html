@@ -2,14 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Coming Soon</title>
+    <title>Code Forest</title>
     <style>
-        body { background-color: #1a1a1a; color: #00ff00; font-family: monospace; text-align: center; padding-top: 20%; }
-        h1 { font-size: 3em; }
+        body { margin: 0; overflow: hidden; background-color: #0d1117; color: #58a6ff; font-family: monospace; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; z-index: 100; pointer-events: none; }
+        #status { position: absolute; bottom: 10px; right: 10px; z-index: 100; color: #3fb950; }
+        canvas { display: block; }
     </style>
+    <!-- Import Three.js from CDN -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+        }
+      }
+    </script>
 </head>
 <body>
-    <h1>🌲 Code Forest is taking root...</h1>
-    <p>forest.micutu.com</p>
+    <div id="info">
+        <h1>🌲 Code Forest</h1>
+        <p>Awaiting GitHub Data...</p>
+    </div>
+    <div id="status">Connecting to roots...</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0d1117, 0.05);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add some "abstract code trees" (Wireframe boxes for now)
+        const geometry = new THREE.BoxGeometry(1, 4, 1);
+        const material = new THREE.MeshBasicMaterial({ color: 0x3fb950, wireframe: true });
+        
+        const trees = [];
+        for(let i = 0; i < 20; i++) {
+            const tree = new THREE.Mesh(geometry, material);
+            tree.position.x = (Math.random() - 0.5) * 20;
+            tree.position.z = (Math.random() - 0.5) * 20;
+            tree.position.y = 0;
+            scene.add(tree);
+            trees.push({ mesh: tree, speed: Math.random() * 0.02 });
+        }
+
+        // Add a grid for the "ground"
+        const gridHelper = new THREE.GridHelper(40, 40, 0x1f6feb, 0x21262d);
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        camera.position.y = 5;
+        camera.position.z = 10;
+        camera.lookAt(0, 0, 0);
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate scene slightly
+            scene.rotation.y += 0.002;
+
+            // Make trees pulse
+            trees.forEach(t => {
+                t.mesh.rotation.y += t.speed;
+                t.mesh.scale.y = 1 + Math.sin(Date.now() * 0.002 * t.speed) * 0.5;
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Fetch Backend Status
+        fetch('/api/')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').innerText = 'Backend: ' + data.status;
+            })
+            .catch(error => {
+                document.getElementById('status').innerText = 'Backend: Disconnected';
+                document.getElementById('status').style.color = '#f85149';
+            });
+    </script>
 </body>
 </html>
