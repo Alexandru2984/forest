@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Ultra Optimized</title>
+    <title>Code Forest - Language Sectors</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
@@ -64,7 +64,7 @@
         <div class="top-bar">
             <div>
                 <h1 id="main-title">🌲 CODE_FOREST</h1>
-                <p id="sub-title">v2.0.0 // GPU_INSTANCING_&_CACHING</p>
+                <p id="sub-title">v3.0.0 // CONCURRENT_SECTORS</p>
             </div>
             <div id="github-form">
                 <label for="github-input">TARGET_USER:</label>
@@ -97,10 +97,10 @@
 
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.005);
+        scene.fog = new THREE.FogExp2(0x050505, 0.004);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 40, 100);
+        camera.position.set(0, 80, 150);
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -125,7 +125,7 @@
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2 + 0.1;
         controls.minDistance = 2;
-        controls.maxDistance = 600;
+        controls.maxDistance = 1000;
         controls.target.set(0, 10, 0);
 
         const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
@@ -143,7 +143,7 @@
         const ambientLight = new THREE.AmbientLight(0x334433);
         scene.add(ambientLight);
         
-        const gridHelper = new THREE.GridHelper(500, 250, 0x00ff80, 0x0a1a10);
+        const gridHelper = new THREE.GridHelper(800, 400, 0x00ff80, 0x0a1a10);
         gridHelper.material.opacity = 0.15;
         gridHelper.material.transparent = true;
         scene.add(gridHelper);
@@ -154,10 +154,9 @@
             'Go': 0x00ADD8, 'Rust': 0xdea584, 'C++': 0xf34b7d, 'C#': 0x178600,
             'Java': 0xb07219, 'HTML': 0xe34c26, 'CSS': 0x563d7c, 'Shell': 0x89e051,
             'Elixir': 0x6e4a7e, 'Swift': 0xF05138, 'Ruby': 0x701516, 'PHP': 0x4F5D95,
-            'C': 0x555555, 'Lua': 0x000080, 'Vue': 0x41b883
+            'C': 0x555555, 'Lua': 0x000080, 'Vue': 0x41b883, 'Jupyter Notebook': 0xDA5B0B
         };
 
-        const MAX_NODES = 10000;
         const geometries = [
             new THREE.IcosahedronGeometry(0.6, 0),
             new THREE.OctahedronGeometry(0.6, 0),
@@ -167,10 +166,7 @@
         let instancedMeshes = [];
         let nodeDataMap = {}; // Map string (meshIndex_instanceId) to Data
         
-        // Lines
         let branchLinesMesh = null;
-        
-        // Trunks
         let trunkMesh = null;
 
         const forestGroup = new THREE.Group();
@@ -201,26 +197,36 @@
         function buildForest(repos, targetUser) {
             clearForest();
 
-            // Count everything
+            // Group repos by language
+            const reposByLang = {};
             let totalCommits = 0;
-            repos.forEach(r => { totalCommits += r.commits ? r.commits.length : 0; });
-            
+            repos.forEach(r => { 
+                const lang = r.language || 'Unknown';
+                if (!reposByLang[lang]) reposByLang[lang] = [];
+                reposByLang[lang].push(r);
+                totalCommits += r.commits ? r.commits.length : 0; 
+            });
+
+            const langs = Object.keys(reposByLang);
+            if(langs.length === 0) return;
+
+            // Sort languages by count so the largest sectors are prominent
+            langs.sort((a,b) => reposByLang[b].length - reposByLang[a].length);
+
             // Set up instanced meshes for nodes
             for(let i=0; i<3; i++){
                 const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
                 const im = new THREE.InstancedMesh(geometries[i], mat, Math.max(totalCommits, 1));
                 im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-                im.count = 0; // Will increment as we fill
+                im.count = 0; 
                 instancedMeshes.push(im);
                 forestGroup.add(im);
             }
 
-            // Set up Line Segments for branches
             const linePositions = new Float32Array(totalCommits * 6);
             const lineColors = new Float32Array(totalCommits * 6);
             let lineIndex = 0;
 
-            // Set up Trunks instanced mesh
             const trunkGeo = new THREE.CylinderGeometry(0.4, 1.2, 1, 6);
             const trunkMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
             trunkMesh = new THREE.InstancedMesh(trunkGeo, trunkMat, Math.max(repos.length, 1));
@@ -228,93 +234,121 @@
 
             const matrix = new THREE.Matrix4();
             const colorObj = new THREE.Color();
-            
             let trunkCount = 0;
 
-            for(let i=0; i<repos.length; i++) {
-                const repo = repos[i];
-                if(!repo.commits || repo.commits.length === 0) continue;
-                
-                const r = 15 + (i * 5) + Math.random() * 15;
-                const theta = i * 2.4; 
-                const x = Math.cos(theta) * r;
-                const z = Math.sin(theta) * r;
-                
-                const language = repo.language || 'Unknown';
-                const treeColorHex = languageColors[language] || 0xaaaaaa;
-                colorObj.setHex(treeColorHex);
+            // We allocate an angle "slice" of the circle for each language based on its share of total repos
+            const totalRepos = repos.length;
+            let currentAngle = 0;
 
-                const cCount = repo.commits.length;
-                const height = 4 + (cCount * 0.8);
+            langs.forEach((lang) => {
+                const langRepos = reposByLang[lang];
+                const baseColorHex = languageColors[lang] || 0x888888;
+                const baseColor = new THREE.Color(baseColorHex);
+                const hsl = {};
+                baseColor.getHSL(hsl);
 
-                // Trunk transform
-                matrix.identity();
-                matrix.makeScale(1, height, 1);
-                matrix.setPosition(x, height/2, z);
-                trunkMesh.setMatrixAt(trunkCount, matrix);
-                trunkMesh.setColorAt(trunkCount, colorObj);
-                trunkCount++;
+                const angleSlice = (langRepos.length / totalRepos) * (Math.PI * 2);
+                const sectorMidAngle = currentAngle + (angleSlice / 2);
 
-                const geomType = Math.floor(treeColorHex % 3);
-                const activeIM = instancedMeshes[geomType];
+                langRepos.forEach((repo, repoIndex) => {
+                    if(!repo.commits || repo.commits.length === 0) return;
 
-                for(let j=0; j<cCount; j++) {
-                    const commit = repo.commits[j];
-                    const yPos = 2 + (j * (height - 2) / cCount) + (Math.random() * 2.0); 
-                    const rad = 2 + Math.random() * 5 + (yPos * 0.1); 
-                    const angle = Math.random() * Math.PI * 2;
+                    // Arrange repos within the language sector. More repos = spread out further radially.
+                    const r = 20 + (Math.floor(repoIndex / 3) * 15) + Math.random() * 10;
                     
-                    const nx = x + Math.cos(angle)*rad;
-                    const ny = yPos;
-                    const nz = z + Math.sin(angle)*rad;
+                    // Spread around the middle of the sector, but bounded by the slice width
+                    const theta = sectorMidAngle + (Math.random() - 0.5) * (angleSlice * 0.8); 
                     
-                    const branchStartX = x;
-                    const branchStartY = yPos - 1.5;
-                    const branchStartZ = z;
+                    const x = Math.cos(theta) * r;
+                    const z = Math.sin(theta) * r;
 
-                    // Add Node to InstancedMesh
-                    const id = activeIM.count;
+                    // Generate a distinct color based on the language color for THIS specific repo
+                    // Shift Hue slightly, shift Saturation and Lightness
+                    const hShift = (Math.random() - 0.5) * 0.15;
+                    let newH = hsl.h + hShift;
+                    if (newH < 0) newH += 1;
+                    if (newH > 1) newH -= 1;
+                    const newS = Math.max(0.5, Math.min(1.0, hsl.s + (Math.random() - 0.5) * 0.3));
+                    const newL = Math.max(0.4, Math.min(0.8, hsl.l + (Math.random() - 0.5) * 0.4));
+                    
+                    colorObj.setHSL(newH, newS, newL);
+                    const treeColorHex = colorObj.getHex();
+
+                    const cCount = repo.commits.length;
+                    const height = 4 + (cCount * 0.8);
+
+                    // Trunk transform
                     matrix.identity();
-                    matrix.setPosition(nx, ny, nz);
-                    activeIM.setMatrixAt(id, matrix);
-                    activeIM.setColorAt(id, colorObj);
-                    
-                    // Save animation and tooltip data
-                    nodeDataMap[`${geomType}_${id}`] = {
-                        rx: (Math.random() - 0.5) * 0.05,
-                        ry: (Math.random() - 0.5) * 0.05,
-                        baseY: ny,
-                        offset: Math.random() * 100,
-                        origMatrix: matrix.clone(),
-                        
-                        repo: repo.full_name,
-                        language: language,
-                        lineColorHex: treeColorHex,
-                        commitHash: commit.hash,
-                        message: commit.message,
-                        url: commit.url
-                    };
-                    
-                    activeIM.count++;
+                    matrix.makeScale(1, height, 1);
+                    matrix.setPosition(x, height/2, z);
+                    trunkMesh.setMatrixAt(trunkCount, matrix);
+                    trunkMesh.setColorAt(trunkCount, colorObj);
+                    trunkCount++;
 
-                    // Add Lines
-                    linePositions[lineIndex] = branchStartX;
-                    linePositions[lineIndex+1] = branchStartY;
-                    linePositions[lineIndex+2] = branchStartZ;
-                    lineColors[lineIndex] = colorObj.r;
-                    lineColors[lineIndex+1] = colorObj.g;
-                    lineColors[lineIndex+2] = colorObj.b;
-                    
-                    linePositions[lineIndex+3] = nx;
-                    linePositions[lineIndex+4] = ny;
-                    linePositions[lineIndex+5] = nz;
-                    lineColors[lineIndex+3] = colorObj.r;
-                    lineColors[lineIndex+4] = colorObj.g;
-                    lineColors[lineIndex+5] = colorObj.b;
-                    
-                    lineIndex += 6;
-                }
-            }
+                    // Choose geometry type based on repo's derived color
+                    const geomType = Math.floor(treeColorHex % 3);
+                    const activeIM = instancedMeshes[geomType];
+
+                    for(let j=0; j<cCount; j++) {
+                        const commit = repo.commits[j];
+                        const yPos = 2 + (j * (height - 2) / cCount) + (Math.random() * 2.0); 
+                        const rad = 2 + Math.random() * 5 + (yPos * 0.1); 
+                        const angle = Math.random() * Math.PI * 2;
+                        
+                        const nx = x + Math.cos(angle)*rad;
+                        const ny = yPos;
+                        const nz = z + Math.sin(angle)*rad;
+                        
+                        const branchStartX = x;
+                        const branchStartY = yPos - 1.5;
+                        const branchStartZ = z;
+
+                        // Add Node
+                        const id = activeIM.count;
+                        matrix.identity();
+                        matrix.setPosition(nx, ny, nz);
+                        activeIM.setMatrixAt(id, matrix);
+                        activeIM.setColorAt(id, colorObj);
+                        
+                        // Save tooltip data
+                        nodeDataMap[`${geomType}_${id}`] = {
+                            rx: (Math.random() - 0.5) * 0.05,
+                            ry: (Math.random() - 0.5) * 0.05,
+                            baseY: ny,
+                            offset: Math.random() * 100,
+                            origMatrix: matrix.clone(),
+                            
+                            repo: repo.full_name,
+                            language: lang,
+                            lineColorHex: treeColorHex,
+                            commitHash: commit.hash,
+                            message: commit.message,
+                            url: commit.url
+                        };
+                        
+                        activeIM.count++;
+
+                        // Add Lines
+                        linePositions[lineIndex] = branchStartX;
+                        linePositions[lineIndex+1] = branchStartY;
+                        linePositions[lineIndex+2] = branchStartZ;
+                        lineColors[lineIndex] = colorObj.r;
+                        lineColors[lineIndex+1] = colorObj.g;
+                        lineColors[lineIndex+2] = colorObj.b;
+                        
+                        linePositions[lineIndex+3] = nx;
+                        linePositions[lineIndex+4] = ny;
+                        linePositions[lineIndex+5] = nz;
+                        lineColors[lineIndex+3] = colorObj.r;
+                        lineColors[lineIndex+4] = colorObj.g;
+                        lineColors[lineIndex+5] = colorObj.b;
+                        
+                        lineIndex += 6;
+                    }
+                });
+
+                currentAngle += angleSlice; // move to next sector
+            });
 
             instancedMeshes.forEach(im => {
                 im.instanceMatrix.needsUpdate = true;
@@ -340,10 +374,9 @@
         
         async function fetchGitHubData(username) {
             statusEl.className = '';
-            statusEl.innerText = 'FETCHING FROM GO PROXY...';
+            statusEl.innerText = 'FETCHING FROM GO PROXY (CONCURRENT)...';
             
             try {
-                // Now fetching through our Go Backend Cache Proxy!
                 const res = await fetch(`/api/github?user=${encodeURIComponent(username)}`);
                 if (!res.ok) throw new Error(`Proxy Error: ${res.status}`);
                 
@@ -355,7 +388,7 @@
                     return;
                 }
 
-                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST FAST...`;
+                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST...`;
                 
                 buildForest(repos, username);
                 
@@ -369,16 +402,16 @@
 
         fetchGitHubData(currentTargetUser);
 
-        // --- PARTICLES (GPU ACCELERATED - Basic BufferGeometry update) ---
-        const particleCount = 4000;
+        // --- PARTICLES ---
+        const particleCount = 6000;
         const particlesGeo = new THREE.BufferGeometry();
         const particlePos = new Float32Array(particleCount * 3);
         const particleVel = new Float32Array(particleCount);
 
         for(let i=0; i<particleCount; i++) {
-            particlePos[i*3] = (Math.random() - 0.5) * 400;
-            particlePos[i*3+1] = Math.random() * 200;
-            particlePos[i*3+2] = (Math.random() - 0.5) * 400;
+            particlePos[i*3] = (Math.random() - 0.5) * 600;
+            particlePos[i*3+1] = Math.random() * 300;
+            particlePos[i*3+2] = (Math.random() - 0.5) * 600;
             particleVel[i] = -0.1 - Math.random() * 0.2;
         }
         particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
@@ -432,7 +465,6 @@
         const dummyQuat = new THREE.Quaternion();
         const dummyScale = new THREE.Vector3();
 
-        // Used for hover scaling
         let hoveredMeshId = -1;
         let hoveredInstanceId = -1;
 
@@ -441,10 +473,10 @@
             const time = clock.getElapsedTime();
 
             // Smooth WASD Fly Camera
-            const panSpeed = 1.2;
+            const panSpeed = 1.6;
             const forward = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
             const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
-            forward.y = 0; right.y = 0; // Keep movement horizontal
+            forward.y = 0; right.y = 0; 
             forward.normalize(); right.normalize();
 
             if (keys.w) { camera.position.addScaledVector(forward, panSpeed); controls.target.addScaledVector(forward, panSpeed); }
@@ -455,11 +487,7 @@
             if (keys.e) { camera.position.y += panSpeed; controls.target.y += panSpeed; }
 
             controls.update();
-            forestGroup.rotation.y = Math.sin(time * 0.005) * 0.05;
-
-            // Rotate instances (Optional: highly optimized by only updating matrices once per few frames, or doing it slowly. Here we do it via math)
-            // For extreme performance, skip rotation, just rely on bloom. We'll do light bobbing.
-            let linePositions = branchLinesMesh ? branchLinesMesh.geometry.attributes.position.array : null;
+            forestGroup.rotation.y = Math.sin(time * 0.003) * 0.03;
 
             for(let i=0; i<instancedMeshes.length; i++){
                 const im = instancedMeshes[i];
@@ -487,11 +515,6 @@
                     
                     dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
                     im.setMatrixAt(j, dummyMatrix);
-
-                    // Update Line End
-                    // Because we pushed lines sequentially, we know line ends are at indices:
-                    // Wait, we didn't store line index mapped. It's okay, Instanced performance is high enough that static lines are acceptable.
-                    // For now, lines won't levitate to save massive CPU iteration over arrays. They will just connect to the base node pos.
                 }
                 im.instanceMatrix.needsUpdate = true;
             }
@@ -501,9 +524,9 @@
             for(let i=0; i<particleCount; i++) {
                 pPositions[i*3+1] += particleVel[i];
                 if(pPositions[i*3+1] < 0) {
-                    pPositions[i*3+1] = 200;
-                    pPositions[i*3] = (Math.random() - 0.5) * 400;
-                    pPositions[i*3+2] = (Math.random() - 0.5) * 400;
+                    pPositions[i*3+1] = 300;
+                    pPositions[i*3] = (Math.random() - 0.5) * 600;
+                    pPositions[i*3+2] = (Math.random() - 0.5) * 600;
                 }
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;

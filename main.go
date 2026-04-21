@@ -49,7 +49,7 @@ func main() {
 	http.HandleFunc("//github", handleGitHub)
 
 	port := ":8085"
-	log.Printf("🌲 Code Forest Backend (v2) is growing on %s...", port)
+	log.Printf("🌲 Code Forest Backend (v3 - Concurrent) is growing on %s...", port)
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -57,15 +57,14 @@ func main() {
 
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" && r.URL.Path != "/api/" {
-		log.Printf("404 for path: %s", r.URL.Path)
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(StatusResponse{
 		Status:  "success",
-		Message: "The roots of the Code Forest are active and caching.",
-		Version: "1.1.0",
+		Message: "The roots of the Code Forest are active, concurrent and caching.",
+		Version: "3.0.0",
 	})
 }
 
@@ -88,7 +87,7 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Cache MISS for user: %s, fetching from GitHub...", user)
+	log.Printf("Cache MISS for user: %s, fetching ALL repos from GitHub concurrently...", user)
 	repos, err := fetchGitHubData(user)
 	if err != nil {
 		log.Printf("Error fetching GitHub data for %s: %v", user, err)
@@ -96,11 +95,11 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save to Cache (5 minutes)
+	// Save to Cache (10 minutes)
 	cacheMutex.Lock()
 	cache[user] = CacheItem{
 		Data:      repos,
-		ExpiresAt: time.Now().Add(5 * time.Minute),
+		ExpiresAt: time.Now().Add(10 * time.Minute),
 	}
 	cacheMutex.Unlock()
 
@@ -109,9 +108,11 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 }
 
 func fetchGitHubData(username string) ([]RepoInfo, error) {
-	client := &http.Client{Timeout: 15 * time.Second}
+	// Increased timeout for 100 repos
+	client := &http.Client{Timeout: 30 * time.Second}
 	
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=15&sort=pushed", username), nil)
+	// Fetch up to 100 repositories
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=100&sort=pushed", username), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -138,21 +139,41 @@ func fetchGitHubData(username string) ([]RepoInfo, error) {
 	}
 
 	var result []RepoInfo
-	for _, rr := range rawRepos {
-		repo := RepoInfo{
-			Name:     rr.Name,
-			FullName: rr.FullName,
-			Language: rr.Language,
-		}
-		if repo.Language == "" {
-			repo.Language = "Unknown"
-		}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
 
-		// Fetch commits
-		commits, _ := fetchCommits(client, rr.FullName)
-		repo.Commits = commits
-		result = append(result, repo)
+	// Concurrent fetching of commits for ALL repos
+	for _, rr := range rawRepos {
+		wg.Add(1)
+		go func(r struct {
+			Name     string `json:"name"`
+			FullName string `json:"full_name"`
+			Language string `json:"language"`
+		}) {
+			defer wg.Done()
+			
+			repo := RepoInfo{
+				Name:     r.Name,
+				FullName: r.FullName,
+				Language: r.Language,
+			}
+			if repo.Language == "" {
+				repo.Language = "Unknown"
+			}
+
+			// Fetch commits for this specific repo
+			commits, _ := fetchCommits(client, r.FullName)
+			repo.Commits = commits
+			
+			// Safely append to results array
+			mu.Lock()
+			result = append(result, repo)
+			mu.Unlock()
+		}(rr)
 	}
+
+	// Wait for all HTTP requests to finish
+	wg.Wait()
 
 	return result, nil
 }
