@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Language Sectors</title>
+    <title>Code Forest - Advanced Filtering</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
@@ -11,29 +11,42 @@
         
         .top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; }
         
-        /* GitHub Input Form */
-        #github-form {
-            display: flex; align-items: center; background: rgba(10, 20, 15, 0.85);
-            border: 1px solid #00ff80; box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
-            padding: 10px; border-radius: 8px; backdrop-filter: blur(4px);
+        /* Panel Styles */
+        .glass-panel {
+            background: rgba(10, 20, 15, 0.85);
+            border: 1px solid #00ff80;
+            box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(4px);
+            margin-bottom: 15px;
         }
-        #github-form label { margin-right: 10px; color: #00ff80; font-weight: bold; }
-        #github-input {
+
+        .glass-panel label { margin-right: 5px; color: #00ff80; font-weight: bold; font-size: 0.9em; }
+        .glass-input {
             background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 255, 128, 0.5);
-            color: #fff; padding: 8px 12px; border-radius: 4px; font-family: inherit;
-            outline: none; width: 200px; transition: all 0.3s;
+            color: #fff; padding: 6px 10px; border-radius: 4px; font-family: inherit;
+            outline: none; transition: all 0.3s; margin-right: 15px;
         }
-        #github-input:focus { border-color: #00ff80; box-shadow: 0 0 10px rgba(0, 255, 128, 0.5) inset; }
-        #github-submit {
-            background: #00ff80; color: #000; border: none; padding: 8px 15px; margin-left: 10px;
-            border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; transition: all 0.3s;
+        .glass-input:focus { border-color: #00ff80; box-shadow: 0 0 10px rgba(0, 255, 128, 0.5) inset; }
+        
+        .glass-btn {
+            background: #00ff80; color: #000; border: none; padding: 8px 15px;
+            border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; transition: all 0.3s; text-transform: uppercase;
         }
-        #github-submit:hover { background: #fff; box-shadow: 0 0 15px #00ff80; }
+        .glass-btn:hover { background: #fff; box-shadow: 0 0 15px #00ff80; }
+
+        /* GitHub Input Form */
+        #github-form { display: flex; align-items: center; }
+        #github-input { width: 180px; }
+        
+        /* Filter Panel */
+        #filter-panel { display: flex; flex-wrap: wrap; align-items: center; max-width: 800px; gap: 10px; }
         
         #status { align-self: flex-end; color: #00ff80; text-shadow: 0 0 5px #00ff80; background: rgba(0,255,128,0.1); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.3); }
         .error-msg { color: #ff3333 !important; text-shadow: 0 0 5px #ff3333 !important; background: rgba(255,51,51,0.1) !important; border-color: rgba(255,51,51,0.3) !important; }
         
-        #controls-help { position: absolute; bottom: 20px; left: 20px; color: #888; font-size: 0.85em; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; border: 1px solid #333; }
+        #controls-help { position: absolute; bottom: 20px; left: 20px; color: #888; font-size: 0.85em; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; border: 1px solid #333; pointer-events: auto;}
         canvas { display: block; outline: none; }
         
         /* Tooltip Style */
@@ -41,7 +54,7 @@
             position: absolute; display: none; background: rgba(10, 20, 15, 0.9);
             border: 1px solid #00ff80; box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
             padding: 15px; border-radius: 8px; color: #fff; pointer-events: none; z-index: 100;
-            font-size: 0.9em; backdrop-filter: blur(4px); min-width: 250px; max-width: 350px;
+            font-size: 0.9em; backdrop-filter: blur(4px); min-width: 250px; max-width: 400px;
         }
         #tooltip strong { color: #fff; display: block; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px; }
         .tt-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
@@ -64,12 +77,35 @@
         <div class="top-bar">
             <div>
                 <h1 id="main-title">🌲 CODE_FOREST</h1>
-                <p id="sub-title">v3.0.0 // CONCURRENT_SECTORS</p>
+                <p id="sub-title">v4.0.0 // FULL_HISTORY_&_FILTERS</p>
+                
+                <!-- Filter Controls -->
+                <div id="filter-panel" class="glass-panel" style="margin-top: 15px; pointer-events: auto;">
+                    <div>
+                        <label for="filter-lang">LANG:</label>
+                        <select id="filter-lang" class="glass-input">
+                            <option value="">ALL</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-created">CREATED AFTER:</label>
+                        <input type="date" id="filter-created" class="glass-input" />
+                    </div>
+                    <div>
+                        <label for="filter-updated">UPDATED AFTER:</label>
+                        <input type="date" id="filter-updated" class="glass-input" />
+                    </div>
+                    <button id="filter-btn" class="glass-btn">APPLY FILTERS</button>
+                </div>
             </div>
-            <div id="github-form">
+
+            <!-- Target User -->
+            <div id="github-form" class="glass-panel" style="pointer-events: auto;">
                 <label for="github-input">TARGET_USER:</label>
-                <input type="text" id="github-input" value="ALexandru2984" placeholder="e.g., torvalds" autocomplete="off" />
-                <button id="github-submit">FETCH</button>
+                <input type="text" id="github-input" value="ALexandru2984" placeholder="e.g., torvalds" autocomplete="off" class="glass-input" style="margin-right: 10px;" />
+                <label for="github-token" style="margin-left: 10px;">TOKEN (Opt):</label>
+                <input type="password" id="github-token" placeholder="ghp_..." autocomplete="off" class="glass-input" style="margin-right: 10px; width: 120px;" />
+                <button id="github-submit" class="glass-btn">FETCH</button>
             </div>
         </div>
         <div id="status">READY</div>
@@ -94,13 +130,14 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
         let currentTargetUser = 'ALexandru2984';
+        let allFetchedRepos = []; // To store global state for filtering
 
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.004);
+        scene.fog = new THREE.FogExp2(0x050505, 0.003); // Lighter fog for larger forests
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 80, 150);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 4000);
+        camera.position.set(0, 150, 250);
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -125,12 +162,12 @@
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2 + 0.1;
         controls.minDistance = 2;
-        controls.maxDistance = 1000;
+        controls.maxDistance = 2000;
         controls.target.set(0, 10, 0);
 
         const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
         window.addEventListener('keydown', (e) => {
-            if (document.activeElement.tagName === 'INPUT') return;
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
             const k = e.key.toLowerCase();
             if (keys.hasOwnProperty(k)) keys[k] = true;
         });
@@ -143,7 +180,7 @@
         const ambientLight = new THREE.AmbientLight(0x334433);
         scene.add(ambientLight);
         
-        const gridHelper = new THREE.GridHelper(800, 400, 0x00ff80, 0x0a1a10);
+        const gridHelper = new THREE.GridHelper(1600, 800, 0x00ff80, 0x0a1a10);
         gridHelper.material.opacity = 0.15;
         gridHelper.material.transparent = true;
         scene.add(gridHelper);
@@ -164,8 +201,7 @@
         ];
         
         let instancedMeshes = [];
-        let nodeDataMap = {}; // Map string (meshIndex_instanceId) to Data
-        
+        let nodeDataMap = {}; 
         let branchLinesMesh = null;
         let trunkMesh = null;
 
@@ -194,6 +230,24 @@
             nodeDataMap = {};
         }
 
+        function populateLanguageDropdown(repos) {
+            const langSet = new Set();
+            repos.forEach(r => langSet.add(r.language || 'Unknown'));
+            
+            const select = document.getElementById('filter-lang');
+            // Keep the selected value if possible
+            const prevVal = select.value;
+            select.innerHTML = '<option value="">ALL</option>';
+            
+            Array.from(langSet).sort().forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l;
+                opt.innerText = l.toUpperCase();
+                if (l === prevVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
         function buildForest(repos, targetUser) {
             clearForest();
 
@@ -210,10 +264,9 @@
             const langs = Object.keys(reposByLang);
             if(langs.length === 0) return;
 
-            // Sort languages by count so the largest sectors are prominent
             langs.sort((a,b) => reposByLang[b].length - reposByLang[a].length);
 
-            // Set up instanced meshes for nodes
+            // Setup InstancedMeshes
             for(let i=0; i<3; i++){
                 const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
                 const im = new THREE.InstancedMesh(geometries[i], mat, Math.max(totalCommits, 1));
@@ -236,7 +289,6 @@
             const colorObj = new THREE.Color();
             let trunkCount = 0;
 
-            // We allocate an angle "slice" of the circle for each language based on its share of total repos
             const totalRepos = repos.length;
             let currentAngle = 0;
 
@@ -253,17 +305,13 @@
                 langRepos.forEach((repo, repoIndex) => {
                     if(!repo.commits || repo.commits.length === 0) return;
 
-                    // Arrange repos within the language sector. More repos = spread out further radially.
-                    const r = 20 + (Math.floor(repoIndex / 3) * 15) + Math.random() * 10;
-                    
-                    // Spread around the middle of the sector, but bounded by the slice width
-                    const theta = sectorMidAngle + (Math.random() - 0.5) * (angleSlice * 0.8); 
+                    // Expand radius mapping for more repos
+                    const r = 30 + (Math.floor(repoIndex / 5) * 20) + Math.random() * 15;
+                    const theta = sectorMidAngle + (Math.random() - 0.5) * (angleSlice * 0.85); 
                     
                     const x = Math.cos(theta) * r;
                     const z = Math.sin(theta) * r;
 
-                    // Generate a distinct color based on the language color for THIS specific repo
-                    // Shift Hue slightly, shift Saturation and Lightness
                     const hShift = (Math.random() - 0.5) * 0.15;
                     let newH = hsl.h + hShift;
                     if (newH < 0) newH += 1;
@@ -277,7 +325,6 @@
                     const cCount = repo.commits.length;
                     const height = 4 + (cCount * 0.8);
 
-                    // Trunk transform
                     matrix.identity();
                     matrix.makeScale(1, height, 1);
                     matrix.setPosition(x, height/2, z);
@@ -285,7 +332,6 @@
                     trunkMesh.setColorAt(trunkCount, colorObj);
                     trunkCount++;
 
-                    // Choose geometry type based on repo's derived color
                     const geomType = Math.floor(treeColorHex % 3);
                     const activeIM = instancedMeshes[geomType];
 
@@ -303,14 +349,16 @@
                         const branchStartY = yPos - 1.5;
                         const branchStartZ = z;
 
-                        // Add Node
                         const id = activeIM.count;
                         matrix.identity();
                         matrix.setPosition(nx, ny, nz);
                         activeIM.setMatrixAt(id, matrix);
                         activeIM.setColorAt(id, colorObj);
                         
-                        // Save tooltip data
+                        // Parse dates for tooltip display
+                        const cDate = new Date(repo.created_at).toLocaleDateString();
+                        const uDate = new Date(repo.updated_at).toLocaleDateString();
+
                         nodeDataMap[`${geomType}_${id}`] = {
                             rx: (Math.random() - 0.5) * 0.05,
                             ry: (Math.random() - 0.5) * 0.05,
@@ -320,6 +368,8 @@
                             
                             repo: repo.full_name,
                             language: lang,
+                            created: cDate,
+                            updated: uDate,
                             lineColorHex: treeColorHex,
                             commitHash: commit.hash,
                             message: commit.message,
@@ -328,7 +378,6 @@
                         
                         activeIM.count++;
 
-                        // Add Lines
                         linePositions[lineIndex] = branchStartX;
                         linePositions[lineIndex+1] = branchStartY;
                         linePositions[lineIndex+2] = branchStartZ;
@@ -347,7 +396,7 @@
                     }
                 });
 
-                currentAngle += angleSlice; // move to next sector
+                currentAngle += angleSlice;
             });
 
             instancedMeshes.forEach(im => {
@@ -357,7 +406,6 @@
             trunkMesh.instanceMatrix.needsUpdate = true;
             trunkMesh.instanceColor.needsUpdate = true;
 
-            // Build Lines Mesh
             if (lineIndex > 0) {
                 const lineGeo = new THREE.BufferGeometry();
                 lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions.slice(0, lineIndex), 3));
@@ -369,30 +417,70 @@
             }
         }
 
+        // --- FILTERING LOGIC ---
+        function applyFilters() {
+            const langVal = document.getElementById('filter-lang').value;
+            const createdVal = document.getElementById('filter-created').value;
+            const updatedVal = document.getElementById('filter-updated').value;
+
+            let filtered = allFetchedRepos.filter(r => {
+                if (langVal && (r.language || 'Unknown') !== langVal) return false;
+                if (createdVal && new Date(r.created_at) < new Date(createdVal)) return false;
+                if (updatedVal && new Date(r.updated_at) < new Date(updatedVal)) return false;
+                return true;
+            });
+
+            // Flash effect for UI transition
+            bloomPass.strength = 3.5;
+            setTimeout(() => { bloomPass.strength = 1.8; }, 400);
+
+            buildForest(filtered, currentTargetUser);
+            document.getElementById('status').innerText = `SHOWING ${filtered.length} / ${allFetchedRepos.length} REPOS`;
+        }
+
+        document.getElementById('filter-btn').addEventListener('click', applyFilters);
+
         // --- GITHUB API FETCHING (via GO PROXY) ---
         const statusEl = document.getElementById('status');
         
-        async function fetchGitHubData(username) {
+        async function fetchGitHubData(username, token) {
             statusEl.className = '';
             statusEl.innerText = 'FETCHING FROM GO PROXY (CONCURRENT)...';
             
             try {
-                const res = await fetch(`/api/github?user=${encodeURIComponent(username)}`);
-                if (!res.ok) throw new Error(`Proxy Error: ${res.status}`);
+                const headers = {};
+                if (token && token.trim() !== '') {
+                    headers['Authorization'] = `Bearer ${token.trim()}`;
+                }
+                const res = await fetch(`/api/github?user=${encodeURIComponent(username)}`, {
+                    headers: headers
+                });
                 
-                const repos = await res.json();
+                if (!res.ok) {
+                    const text = await res.text();
+                    throw new Error(`Proxy Error ${res.status}: ${text}`);
+                }
                 
-                if (!repos || repos.length === 0) {
+                allFetchedRepos = await res.json();
+                
+                if (!allFetchedRepos || allFetchedRepos.length === 0) {
                     statusEl.innerText = `NO REPOS FOUND FOR [${username}]`;
                     statusEl.classList.add('error-msg');
                     return;
                 }
 
-                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST...`;
+                populateLanguageDropdown(allFetchedRepos);
+
+                statusEl.innerText = `FOUND ${allFetchedRepos.length} REPOS. GROWING FOREST...`;
                 
-                buildForest(repos, username);
+                // Reset Filters on new scan
+                document.getElementById('filter-lang').value = "";
+                document.getElementById('filter-created').value = "";
+                document.getElementById('filter-updated').value = "";
+
+                buildForest(allFetchedRepos, username);
                 
-                statusEl.innerText = `[LIVE] SYNCED WITH GITHUB: ${username.toUpperCase()}`;
+                statusEl.innerText = `[LIVE] SYNCED ${allFetchedRepos.length} REPOS FOR: ${username.toUpperCase()}`;
                 
             } catch (err) {
                 statusEl.innerText = `ERROR: ${err.message}`;
@@ -400,7 +488,8 @@
             }
         }
 
-        fetchGitHubData(currentTargetUser);
+        // Removed initial auto-fetch to prevent instant rate limiting
+        document.getElementById('status').innerText = 'AWAITING SCAN... ENTER USERNAME/TOKEN AND CLICK FETCH';
 
         // --- PARTICLES ---
         const particleCount = 6000;
@@ -409,13 +498,13 @@
         const particleVel = new Float32Array(particleCount);
 
         for(let i=0; i<particleCount; i++) {
-            particlePos[i*3] = (Math.random() - 0.5) * 600;
-            particlePos[i*3+1] = Math.random() * 300;
-            particlePos[i*3+2] = (Math.random() - 0.5) * 600;
-            particleVel[i] = -0.1 - Math.random() * 0.2;
+            particlePos[i*3] = (Math.random() - 0.5) * 800;
+            particlePos[i*3+1] = Math.random() * 400;
+            particlePos[i*3+2] = (Math.random() - 0.5) * 800;
+            particleVel[i] = -0.1 - Math.random() * 0.3;
         }
         particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-        const particleMat = new THREE.PointsMaterial({ color: 0x88ffcc, size: 0.2, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+        const particleMat = new THREE.PointsMaterial({ color: 0x88ffcc, size: 0.3, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
         const particleSystem = new THREE.Points(particlesGeo, particleMat);
         scene.add(particleSystem);
 
@@ -426,6 +515,8 @@
         const tooltip = document.getElementById('tooltip');
 
         let lastMouseTime = 0;
+        let testMeshes = [];
+
         window.addEventListener('mousemove', (event) => {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -446,13 +537,16 @@
         const ghInput = document.getElementById('github-input');
         const ghSubmit = document.getElementById('github-submit');
 
+        const ghToken = document.getElementById('github-token');
+
         function triggerScan() {
             const val = ghInput.value.trim();
+            const tokenVal = ghToken.value.trim();
             if(val.length > 0) {
                 currentTargetUser = val;
                 bloomPass.strength = 4.0;
                 setTimeout(() => { bloomPass.strength = 1.8; }, 600);
-                fetchGitHubData(currentTargetUser);
+                fetchGitHubData(currentTargetUser, tokenVal);
             }
         }
         ghSubmit.addEventListener('click', triggerScan);
@@ -473,7 +567,7 @@
             const time = clock.getElapsedTime();
 
             // Smooth WASD Fly Camera
-            const panSpeed = 1.6;
+            const panSpeed = 2.0;
             const forward = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
             const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
             forward.y = 0; right.y = 0; 
@@ -524,9 +618,9 @@
             for(let i=0; i<particleCount; i++) {
                 pPositions[i*3+1] += particleVel[i];
                 if(pPositions[i*3+1] < 0) {
-                    pPositions[i*3+1] = 300;
-                    pPositions[i*3] = (Math.random() - 0.5) * 600;
-                    pPositions[i*3+2] = (Math.random() - 0.5) * 600;
+                    pPositions[i*3+1] = 400;
+                    pPositions[i*3] = (Math.random() - 0.5) * 800;
+                    pPositions[i*3+2] = (Math.random() - 0.5) * 800;
                 }
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;
@@ -553,8 +647,10 @@
                                 <strong><span style="color:${colorHex}">●</span> "${ud.message}"</strong>
                                 <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${ud.repo}</span></div>
                                 <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${colorHex}">${ud.language}</span></div>
+                                <div class="tt-row"><span class="tt-label">Created:</span> <span class="tt-value">${ud.created}</span></div>
+                                <div class="tt-row"><span class="tt-label">Updated:</span> <span class="tt-value">${ud.updated}</span></div>
                                 <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${ud.commitHash}</span></div>
-                                <div class="tt-action">[ Click to view on GitHub ]</div>
+                                <div class="tt-action">[ Click to open Commit ]</div>
                             `;
                             tooltip.style.border = `1px solid ${colorHex}`;
                             tooltip.style.boxShadow = `0 0 15px ${colorHex}88`;

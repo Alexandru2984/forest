@@ -23,10 +23,12 @@ type CommitInfo struct {
 }
 
 type RepoInfo struct {
-	Name     string       `json:"name"`
-	FullName string       `json:"full_name"`
-	Language string       `json:"language"`
-	Commits  []CommitInfo `json:"commits"`
+	Name      string       `json:"name"`
+	FullName  string       `json:"full_name"`
+	Language  string       `json:"language"`
+	CreatedAt string       `json:"created_at"`
+	UpdatedAt string       `json:"updated_at"`
+	Commits   []CommitInfo `json:"commits"`
 }
 
 type CacheItem struct {
@@ -74,10 +76,23 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing 'user' parameter", http.StatusBadRequest)
 		return
 	}
+	
+	token := r.Header.Get("Authorization")
+
+	if token != "" {
+		log.Printf("Received authenticated request for user: %s (Token length: %d)", user, len(token))
+	} else {
+		log.Printf("Received UNAUTHENTICATED request for user: %s", user)
+	}
+
+	cacheKey := user
+	if token != "" {
+		cacheKey = user + "_auth" // Separate cache for authenticated requests
+	}
 
 	// Check Cache
 	cacheMutex.RLock()
-	item, found := cache[user]
+	item, found := cache[cacheKey]
 	cacheMutex.RUnlock()
 
 	if found && time.Now().Before(item.ExpiresAt) {
@@ -88,16 +103,16 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Cache MISS for user: %s, fetching ALL repos from GitHub concurrently...", user)
-	repos, err := fetchGitHubData(user)
+	repos, err := fetchGitHubData(user, token)
 	if err != nil {
 		log.Printf("Error fetching GitHub data for %s: %v", user, err)
-		http.Error(w, fmt.Sprintf("Failed to fetch data: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("%v", err), http.StatusBadGateway)
 		return
 	}
 
 	// Save to Cache (10 minutes)
 	cacheMutex.Lock()
-	cache[user] = CacheItem{
+	cache[cacheKey] = CacheItem{
 		Data:      repos,
 		ExpiresAt: time.Now().Add(10 * time.Minute),
 	}
@@ -107,83 +122,112 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(repos)
 }
 
-func fetchGitHubData(username string) ([]RepoInfo, error) {
-	// Increased timeout for 100 repos
-	client := &http.Client{Timeout: 30 * time.Second}
-	
-	// Fetch up to 100 repositories
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=100&sort=pushed", username), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "CodeForest-Backend")
+type RawRepo struct {
+	Name      string `json:"name"`
+	FullName  string `json:"full_name"`
+	Language  string `json:"language"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+func fetchGitHubData(username, token string) ([]RepoInfo, error) {
+	client := &http.Client{Timeout: 45 * time.Second}
+	var rawRepos []RawRepo
+	page := 1
 
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("github api returned status %d: %s", resp.StatusCode, string(bodyBytes))
-	}
+	for {
+		req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=100&page=%d&sort=pushed", username, page), nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("User-Agent", "CodeForest-Backend")
+		if token != "" {
+			req.Header.Set("Authorization", token)
+		}
 
-	var rawRepos []struct {
-		Name     string `json:"name"`
-		FullName string `json:"full_name"`
-		Language string `json:"language"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&rawRepos); err != nil {
-		return nil, err
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		
+		if resp.StatusCode != http.StatusOK {
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			return nil, fmt.Errorf("github api returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		}
+
+		var pageRepos []RawRepo
+		if err := json.NewDecoder(resp.Body).Decode(&pageRepos); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+
+		rawRepos = append(rawRepos, pageRepos...)
+
+		if len(pageRepos) < 100 {
+			break
+		}
+		page++
 	}
 
 	var result []RepoInfo
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	// Concurrent fetching of commits for ALL repos
+	// Limit concurrency to 2 to prevent GitHub Abuse Rate Limiting
+	sem := make(chan struct{}, 2)
+
 	for _, rr := range rawRepos {
 		wg.Add(1)
-		go func(r struct {
-			Name     string `json:"name"`
-			FullName string `json:"full_name"`
-			Language string `json:"language"`
-		}) {
+		go func(r RawRepo) {
 			defer wg.Done()
 			
+			sem <- struct{}{}        // Acquire token
+			
+			// Optional: slight delay to keep GitHub completely happy
+			time.Sleep(150 * time.Millisecond)
+
 			repo := RepoInfo{
-				Name:     r.Name,
-				FullName: r.FullName,
-				Language: r.Language,
+				Name:      r.Name,
+				FullName:  r.FullName,
+				Language:  r.Language,
+				CreatedAt: r.CreatedAt,
+				UpdatedAt: r.UpdatedAt,
 			}
 			if repo.Language == "" {
 				repo.Language = "Unknown"
 			}
 
-			// Fetch commits for this specific repo
-			commits, _ := fetchCommits(client, r.FullName)
-			repo.Commits = commits
+			commits, err := fetchCommits(client, r.FullName, token)
+			if err != nil {
+				log.Printf("Warning: Failed to fetch commits for %s: %v", r.FullName, err)
+			} else {
+				repo.Commits = commits
+			}
 			
-			// Safely append to results array
+			<-sem // Release token
+			
 			mu.Lock()
 			result = append(result, repo)
 			mu.Unlock()
 		}(rr)
 	}
 
-	// Wait for all HTTP requests to finish
 	wg.Wait()
 
 	return result, nil
 }
 
-func fetchCommits(client *http.Client, fullName string) ([]CommitInfo, error) {
+func fetchCommits(client *http.Client, fullName, token string) ([]CommitInfo, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/%s/commits?per_page=20", fullName), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "CodeForest-Backend")
+	if token != "" {
+		req.Header.Set("Authorization", token)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
