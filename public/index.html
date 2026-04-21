@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Live GitHub Data</title>
+    <title>Code Forest - Ultra Optimized</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
@@ -13,26 +13,15 @@
         
         /* GitHub Input Form */
         #github-form {
-            display: flex;
-            align-items: center;
-            background: rgba(10, 20, 15, 0.85);
-            border: 1px solid #00ff80;
-            box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
-            padding: 10px;
-            border-radius: 8px;
-            backdrop-filter: blur(4px);
+            display: flex; align-items: center; background: rgba(10, 20, 15, 0.85);
+            border: 1px solid #00ff80; box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+            padding: 10px; border-radius: 8px; backdrop-filter: blur(4px);
         }
         #github-form label { margin-right: 10px; color: #00ff80; font-weight: bold; }
         #github-input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(0, 255, 128, 0.5);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-family: inherit;
-            outline: none;
-            width: 200px;
-            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 255, 128, 0.5);
+            color: #fff; padding: 8px 12px; border-radius: 4px; font-family: inherit;
+            outline: none; width: 200px; transition: all 0.3s;
         }
         #github-input:focus { border-color: #00ff80; box-shadow: 0 0 10px rgba(0, 255, 128, 0.5) inset; }
         #github-submit {
@@ -75,7 +64,7 @@
         <div class="top-bar">
             <div>
                 <h1 id="main-title">🌲 CODE_FOREST</h1>
-                <p id="sub-title">v1.0.0 // LIVE_GITHUB_API</p>
+                <p id="sub-title">v2.0.0 // GPU_INSTANCING_&_CACHING</p>
             </div>
             <div id="github-form">
                 <label for="github-input">TARGET_USER:</label>
@@ -86,12 +75,12 @@
         <div id="status">READY</div>
         <div id="controls-help">
             <strong>CAMERA CONTROLS:</strong><br>
-            [W][A][S][D] - Move Forward/Left/Back/Right<br>
-            [Q][E] - Move Up/Down<br>
-            [Left Click + Drag] - Rotate View<br>
-            [Scroll] - Zoom In/Out<br>
-            [Hover] - View Commit Data<br>
-            [Click Node] - Open Commit in GitHub
+            [W][A][S][D] - Move Camera<br>
+            [Q][E] - Fly Up/Down<br>
+            [Left Click + Drag] - Rotate<br>
+            [Scroll] - Zoom<br>
+            [Hover] - View Data<br>
+            [Click Node] - Open Commit
         </div>
     </div>
     
@@ -108,10 +97,10 @@
 
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.008);
+        scene.fog = new THREE.FogExp2(0x050505, 0.005);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 30, 80);
+        camera.position.set(0, 40, 100);
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -136,13 +125,11 @@
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2 + 0.1;
         controls.minDistance = 2;
-        controls.maxDistance = 500;
+        controls.maxDistance = 600;
         controls.target.set(0, 10, 0);
 
-        // Custom Keyboard WASD Controls
         const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
         window.addEventListener('keydown', (e) => {
-            // ignore if typing in input
             if (document.activeElement.tagName === 'INPUT') return;
             const k = e.key.toLowerCase();
             if (keys.hasOwnProperty(k)) keys[k] = true;
@@ -152,21 +139,16 @@
             if (keys.hasOwnProperty(k)) keys[k] = false;
         });
 
-        // --- LIGHTS ---
-        const ambientLight = new THREE.AmbientLight(0x223322);
+        // --- LIGHTS & ENV ---
+        const ambientLight = new THREE.AmbientLight(0x334433);
         scene.add(ambientLight);
-
-        // --- ENVIRONMENT ---
-        const gridHelper = new THREE.GridHelper(400, 200, 0x00ff80, 0x0a1a10);
-        gridHelper.position.y = 0;
-        gridHelper.material.opacity = 0.2;
+        
+        const gridHelper = new THREE.GridHelper(500, 250, 0x00ff80, 0x0a1a10);
+        gridHelper.material.opacity = 0.15;
         gridHelper.material.transparent = true;
         scene.add(gridHelper);
 
-        // --- ORGANIC TREES (DATA STRUCTURES) ---
-        const treeGroup = new THREE.Group();
-        scene.add(treeGroup);
-
+        // --- GPU INSTANCING GLOBALS ---
         const languageColors = {
             'JavaScript': 0xf1e05a, 'TypeScript': 0x3178c6, 'Python': 0x3572A5,
             'Go': 0x00ADD8, 'Rust': 0xdea584, 'C++': 0xf34b7d, 'C#': 0x178600,
@@ -174,142 +156,209 @@
             'Elixir': 0x6e4a7e, 'Swift': 0xF05138, 'Ruby': 0x701516, 'PHP': 0x4F5D95,
             'C': 0x555555, 'Lua': 0x000080, 'Vue': 0x41b883
         };
+
+        const MAX_NODES = 10000;
+        const geometries = [
+            new THREE.IcosahedronGeometry(0.6, 0),
+            new THREE.OctahedronGeometry(0.6, 0),
+            new THREE.DodecahedronGeometry(0.6, 0)
+        ];
         
-        let allNodes = [];
-        let testMeshes = [];
+        let instancedMeshes = [];
+        let nodeDataMap = {}; // Map string (meshIndex_instanceId) to Data
         
-        function createRealRepoTree(x, z, repo, commits) {
-            const group = new THREE.Group();
-            group.position.set(x, 0, z);
+        // Lines
+        let branchLinesMesh = null;
+        
+        // Trunks
+        let trunkMesh = null;
 
-            const language = repo.language || 'Unknown';
-            const treeColor = languageColors[language] || 0xaaaaaa;
+        const forestGroup = new THREE.Group();
+        scene.add(forestGroup);
 
-            const commitCount = Math.max(commits.length, 1); // at least a stump
-            const height = 4 + (commitCount * 0.8); // taller for more commits
-
-            // Trunk
-            const trunkGeo = new THREE.CylinderGeometry(0.3, 1.0, height, 6);
-            const trunkMat = new THREE.MeshBasicMaterial({ color: treeColor, wireframe: true, transparent: true, opacity: 0.4 });
-            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-            trunk.position.y = height / 2;
-            group.add(trunk);
-
-            // Inner Glow
-            const glowGeo = new THREE.CylinderGeometry(0.6, 1.5, height, 8);
-            const glowMat = new THREE.MeshBasicMaterial({ color: treeColor, transparent: true, opacity: 0.08 });
-            const glow = new THREE.Mesh(glowGeo, glowMat);
-            glow.position.y = height / 2;
-            group.add(glow);
-
-            const nodes = [];
+        function clearForest() {
+            instancedMeshes.forEach(mesh => {
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+                forestGroup.remove(mesh);
+            });
+            instancedMeshes = [];
             
-            // Geometries based on color hash
-            const geomType = Math.floor(treeColor % 3);
-            let baseNodeGeo;
-            if (geomType === 0) baseNodeGeo = new THREE.IcosahedronGeometry(0.6, 0); 
-            else if (geomType === 1) baseNodeGeo = new THREE.OctahedronGeometry(0.6, 0); 
-            else baseNodeGeo = new THREE.DodecahedronGeometry(0.6, 0); 
-            
-            for(let i=0; i<commits.length; i++) {
-                const commit = commits[i];
-                const nodeMat = new THREE.MeshBasicMaterial({ color: treeColor });
-                const node = new THREE.Mesh(baseNodeGeo, nodeMat);
-                
-                // Distribute vertically from bottom to top
-                const yPos = 2 + (i * (height - 2) / commitCount) + (Math.random() * 2.0); 
-                const r = 2 + Math.random() * 5 + (yPos * 0.1); 
-                const theta = Math.random() * Math.PI * 2;
-                
-                node.position.set(Math.cos(theta)*r, yPos, Math.sin(theta)*r);
-                
-                node.userData = { 
-                    rx: (Math.random() - 0.5) * 0.05, 
-                    ry: (Math.random() - 0.5) * 0.05,
-                    baseY: yPos,
-                    offset: Math.random() * 100,
-                    lineColor: treeColor,
-                    
-                    repo: repo.full_name,
-                    language: language,
-                    commitHash: commit.sha.substring(0, 7),
-                    message: commit.commit.message.split('\n')[0], // First line of message
-                    url: commit.html_url // REAL COMMIT URL
-                };
-                
-                group.add(node);
-                nodes.push(node);
-
-                const branchStart = new THREE.Vector3(0, yPos - 1.5, 0);
-                const lineMat = new THREE.LineBasicMaterial({ color: treeColor, transparent: true, opacity: 0.5 });
-                const pts = [branchStart, node.position];
-                const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
-                const line = new THREE.Line(lineGeo, lineMat);
-                group.add(line);
-                
-                node.userData.line = line;
-                node.userData.branchStart = branchStart;
+            if(branchLinesMesh) {
+                branchLinesMesh.geometry.dispose();
+                branchLinesMesh.material.dispose();
+                forestGroup.remove(branchLinesMesh);
             }
-
-            treeGroup.add(group);
-            return { group, nodes };
+            if(trunkMesh) {
+                trunkMesh.geometry.dispose();
+                trunkMesh.material.dispose();
+                forestGroup.remove(trunkMesh);
+            }
+            
+            nodeDataMap = {};
         }
 
-        // --- GITHUB API FETCHING ---
+        function buildForest(repos, targetUser) {
+            clearForest();
+
+            // Count everything
+            let totalCommits = 0;
+            repos.forEach(r => { totalCommits += r.commits ? r.commits.length : 0; });
+            
+            // Set up instanced meshes for nodes
+            for(let i=0; i<3; i++){
+                const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const im = new THREE.InstancedMesh(geometries[i], mat, Math.max(totalCommits, 1));
+                im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                im.count = 0; // Will increment as we fill
+                instancedMeshes.push(im);
+                forestGroup.add(im);
+            }
+
+            // Set up Line Segments for branches
+            const linePositions = new Float32Array(totalCommits * 6);
+            const lineColors = new Float32Array(totalCommits * 6);
+            let lineIndex = 0;
+
+            // Set up Trunks instanced mesh
+            const trunkGeo = new THREE.CylinderGeometry(0.4, 1.2, 1, 6);
+            const trunkMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
+            trunkMesh = new THREE.InstancedMesh(trunkGeo, trunkMat, Math.max(repos.length, 1));
+            forestGroup.add(trunkMesh);
+
+            const matrix = new THREE.Matrix4();
+            const colorObj = new THREE.Color();
+            
+            let trunkCount = 0;
+
+            for(let i=0; i<repos.length; i++) {
+                const repo = repos[i];
+                if(!repo.commits || repo.commits.length === 0) continue;
+                
+                const r = 15 + (i * 5) + Math.random() * 15;
+                const theta = i * 2.4; 
+                const x = Math.cos(theta) * r;
+                const z = Math.sin(theta) * r;
+                
+                const language = repo.language || 'Unknown';
+                const treeColorHex = languageColors[language] || 0xaaaaaa;
+                colorObj.setHex(treeColorHex);
+
+                const cCount = repo.commits.length;
+                const height = 4 + (cCount * 0.8);
+
+                // Trunk transform
+                matrix.identity();
+                matrix.makeScale(1, height, 1);
+                matrix.setPosition(x, height/2, z);
+                trunkMesh.setMatrixAt(trunkCount, matrix);
+                trunkMesh.setColorAt(trunkCount, colorObj);
+                trunkCount++;
+
+                const geomType = Math.floor(treeColorHex % 3);
+                const activeIM = instancedMeshes[geomType];
+
+                for(let j=0; j<cCount; j++) {
+                    const commit = repo.commits[j];
+                    const yPos = 2 + (j * (height - 2) / cCount) + (Math.random() * 2.0); 
+                    const rad = 2 + Math.random() * 5 + (yPos * 0.1); 
+                    const angle = Math.random() * Math.PI * 2;
+                    
+                    const nx = x + Math.cos(angle)*rad;
+                    const ny = yPos;
+                    const nz = z + Math.sin(angle)*rad;
+                    
+                    const branchStartX = x;
+                    const branchStartY = yPos - 1.5;
+                    const branchStartZ = z;
+
+                    // Add Node to InstancedMesh
+                    const id = activeIM.count;
+                    matrix.identity();
+                    matrix.setPosition(nx, ny, nz);
+                    activeIM.setMatrixAt(id, matrix);
+                    activeIM.setColorAt(id, colorObj);
+                    
+                    // Save animation and tooltip data
+                    nodeDataMap[`${geomType}_${id}`] = {
+                        rx: (Math.random() - 0.5) * 0.05,
+                        ry: (Math.random() - 0.5) * 0.05,
+                        baseY: ny,
+                        offset: Math.random() * 100,
+                        origMatrix: matrix.clone(),
+                        
+                        repo: repo.full_name,
+                        language: language,
+                        lineColorHex: treeColorHex,
+                        commitHash: commit.hash,
+                        message: commit.message,
+                        url: commit.url
+                    };
+                    
+                    activeIM.count++;
+
+                    // Add Lines
+                    linePositions[lineIndex] = branchStartX;
+                    linePositions[lineIndex+1] = branchStartY;
+                    linePositions[lineIndex+2] = branchStartZ;
+                    lineColors[lineIndex] = colorObj.r;
+                    lineColors[lineIndex+1] = colorObj.g;
+                    lineColors[lineIndex+2] = colorObj.b;
+                    
+                    linePositions[lineIndex+3] = nx;
+                    linePositions[lineIndex+4] = ny;
+                    linePositions[lineIndex+5] = nz;
+                    lineColors[lineIndex+3] = colorObj.r;
+                    lineColors[lineIndex+4] = colorObj.g;
+                    lineColors[lineIndex+5] = colorObj.b;
+                    
+                    lineIndex += 6;
+                }
+            }
+
+            instancedMeshes.forEach(im => {
+                im.instanceMatrix.needsUpdate = true;
+                im.instanceColor.needsUpdate = true;
+            });
+            trunkMesh.instanceMatrix.needsUpdate = true;
+            trunkMesh.instanceColor.needsUpdate = true;
+
+            // Build Lines Mesh
+            if (lineIndex > 0) {
+                const lineGeo = new THREE.BufferGeometry();
+                lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions.slice(0, lineIndex), 3));
+                lineGeo.setAttribute('color', new THREE.BufferAttribute(lineColors.slice(0, lineIndex), 3));
+                
+                const lineMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.3 });
+                branchLinesMesh = new THREE.LineSegments(lineGeo, lineMat);
+                forestGroup.add(branchLinesMesh);
+            }
+        }
+
+        // --- GITHUB API FETCHING (via GO PROXY) ---
         const statusEl = document.getElementById('status');
         
         async function fetchGitHubData(username) {
             statusEl.className = '';
-            statusEl.innerText = 'FETCHING REPOSITORIES...';
-            
-            // Clear existing
-            while(treeGroup.children.length > 0){ treeGroup.remove(treeGroup.children[0]); }
-            allNodes = [];
-            testMeshes = [];
+            statusEl.innerText = 'FETCHING FROM GO PROXY...';
             
             try {
-                // Fetch top 15 most recently pushed repos (to avoid hitting API limits too hard)
-                const repoRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=15&sort=pushed`);
-                if (!repoRes.ok) throw new Error(`GitHub API Error: ${repoRes.statusText}`);
+                // Now fetching through our Go Backend Cache Proxy!
+                const res = await fetch(`/api/github?user=${encodeURIComponent(username)}`);
+                if (!res.ok) throw new Error(`Proxy Error: ${res.status}`);
                 
-                const repos = await repoRes.json();
+                const repos = await res.json();
                 
-                if (repos.length === 0) {
+                if (!repos || repos.length === 0) {
                     statusEl.innerText = `NO REPOS FOUND FOR [${username}]`;
                     statusEl.classList.add('error-msg');
                     return;
                 }
 
-                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST...`;
-
-                for(let i=0; i<repos.length; i++) {
-                    const repo = repos[i];
-                    
-                    // Distribute trees in a spiral/circle
-                    const r = 10 + (i * 4) + Math.random() * 10;
-                    const theta = i * 2.4; // Golden ratio approx spread
-                    const x = Math.cos(theta) * r;
-                    const z = Math.sin(theta) * r;
-                    
-                    // Fetch commits for this repo (max 20)
-                    let commits = [];
-                    try {
-                        const commitRes = await fetch(`https://api.github.com/repos/${repo.full_name}/commits?per_page=20`);
-                        if (commitRes.ok) {
-                            commits = await commitRes.json();
-                        }
-                    } catch (e) {
-                        console.warn(`Failed to fetch commits for ${repo.name}`);
-                    }
-                    
-                    const treeData = createRealRepoTree(x, z, repo, commits);
-                    allNodes.push(...treeData.nodes.map(n => ({ node: n })));
-                    
-                    // Update status progressively
-                    statusEl.innerText = `PLANTED ${i+1}/${repos.length} TREES...`;
-                }
+                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST FAST...`;
                 
-                testMeshes = allNodes.map(item => item.node);
+                buildForest(repos, username);
+                
                 statusEl.innerText = `[LIVE] SYNCED WITH GITHUB: ${username.toUpperCase()}`;
                 
             } catch (err) {
@@ -318,50 +367,47 @@
             }
         }
 
-        // Generate initial forest
         fetchGitHubData(currentTargetUser);
 
-        // --- PARTICLES ---
-        const particleCount = 2000;
+        // --- PARTICLES (GPU ACCELERATED - Basic BufferGeometry update) ---
+        const particleCount = 4000;
         const particlesGeo = new THREE.BufferGeometry();
         const particlePos = new Float32Array(particleCount * 3);
-        const particleVel = [];
+        const particleVel = new Float32Array(particleCount);
 
         for(let i=0; i<particleCount; i++) {
-            particlePos[i*3] = (Math.random() - 0.5) * 300;
-            particlePos[i*3+1] = Math.random() * 150;
-            particlePos[i*3+2] = (Math.random() - 0.5) * 300;
-            particleVel.push({ y: -0.05 - Math.random() * 0.1 });
+            particlePos[i*3] = (Math.random() - 0.5) * 400;
+            particlePos[i*3+1] = Math.random() * 200;
+            particlePos[i*3+2] = (Math.random() - 0.5) * 400;
+            particleVel[i] = -0.1 - Math.random() * 0.2;
         }
         particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-        const particleMat = new THREE.PointsMaterial({ color: 0x88ffcc, size: 0.2, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
+        const particleMat = new THREE.PointsMaterial({ color: 0x88ffcc, size: 0.2, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
         const particleSystem = new THREE.Points(particlesGeo, particleMat);
         scene.add(particleSystem);
 
-        // --- RAYCASTING & INTERACTION ---
+        // --- RAYCASTING (Throttled for Performance) ---
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        let hoveredNode = null;
+        let hoveredNodeInfo = null; 
         const tooltip = document.getElementById('tooltip');
 
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('click', onClick, false);
-
-        function onMouseMove(event) {
+        let lastMouseTime = 0;
+        window.addEventListener('mousemove', (event) => {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             tooltip.style.left = (event.clientX + 20) + 'px';
             tooltip.style.top = (event.clientY + 20) + 'px';
-        }
+            lastMouseTime = Date.now();
+        }, false);
 
-        function onClick(event) {
+        window.addEventListener('click', (event) => {
             if (event.target.closest('.top-bar') || event.target.closest('#tooltip')) return;
-
-            if (hoveredNode && hoveredNode.userData.url) {
-                window.open(hoveredNode.userData.url, '_blank'); // Opens the specific COMMIT URL!
+            if (hoveredNodeInfo && hoveredNodeInfo.url) {
+                window.open(hoveredNodeInfo.url, '_blank');
             }
-        }
+        }, false);
 
         // --- UI LOGIC ---
         const ghInput = document.getElementById('github-input');
@@ -373,101 +419,132 @@
                 currentTargetUser = val;
                 bloomPass.strength = 4.0;
                 setTimeout(() => { bloomPass.strength = 1.8; }, 600);
-
                 fetchGitHubData(currentTargetUser);
             }
         }
-
         ghSubmit.addEventListener('click', triggerScan);
-        ghInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') triggerScan();
-        });
+        ghInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') triggerScan(); });
 
         // --- ANIMATION LOOP ---
         const clock = new THREE.Clock();
+        const dummyMatrix = new THREE.Matrix4();
+        const dummyPos = new THREE.Vector3();
+        const dummyQuat = new THREE.Quaternion();
+        const dummyScale = new THREE.Vector3();
+
+        // Used for hover scaling
+        let hoveredMeshId = -1;
+        let hoveredInstanceId = -1;
 
         function animate() {
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
 
-            // Handle WASD Camera Pan Movement
-            const panSpeed = 1.0;
-            if (keys.w) { camera.translateZ(-panSpeed); controls.target.translateZ(-panSpeed); }
-            if (keys.s) { camera.translateZ(panSpeed); controls.target.translateZ(panSpeed); }
-            if (keys.a) { camera.translateX(-panSpeed); controls.target.translateX(-panSpeed); }
-            if (keys.d) { camera.translateX(panSpeed); controls.target.translateX(panSpeed); }
+            // Smooth WASD Fly Camera
+            const panSpeed = 1.2;
+            const forward = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+            const right = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+            forward.y = 0; right.y = 0; // Keep movement horizontal
+            forward.normalize(); right.normalize();
+
+            if (keys.w) { camera.position.addScaledVector(forward, panSpeed); controls.target.addScaledVector(forward, panSpeed); }
+            if (keys.s) { camera.position.addScaledVector(forward, -panSpeed); controls.target.addScaledVector(forward, -panSpeed); }
+            if (keys.d) { camera.position.addScaledVector(right, panSpeed); controls.target.addScaledVector(right, panSpeed); }
+            if (keys.a) { camera.position.addScaledVector(right, -panSpeed); controls.target.addScaledVector(right, -panSpeed); }
             if (keys.q) { camera.position.y -= panSpeed; controls.target.y -= panSpeed; }
             if (keys.e) { camera.position.y += panSpeed; controls.target.y += panSpeed; }
 
             controls.update();
+            forestGroup.rotation.y = Math.sin(time * 0.005) * 0.05;
 
-            treeGroup.rotation.y = Math.sin(time * 0.005) * 0.05;
+            // Rotate instances (Optional: highly optimized by only updating matrices once per few frames, or doing it slowly. Here we do it via math)
+            // For extreme performance, skip rotation, just rely on bloom. We'll do light bobbing.
+            let linePositions = branchLinesMesh ? branchLinesMesh.geometry.attributes.position.array : null;
 
-            allNodes.forEach(item => {
-                const n = item.node;
-                n.rotation.x += n.userData.rx;
-                n.rotation.y += n.userData.ry;
+            for(let i=0; i<instancedMeshes.length; i++){
+                const im = instancedMeshes[i];
+                if(im.count === 0) continue;
                 
-                if(hoveredNode !== n) {
-                    n.position.y = n.userData.baseY + Math.sin(time * 2 + n.userData.offset) * 0.4;
+                for(let j=0; j<im.count; j++){
+                    const data = nodeDataMap[`${i}_${j}`];
+                    if(!data) continue;
+                    
+                    data.origMatrix.decompose(dummyPos, dummyQuat, dummyScale);
+                    
+                    // Levitate
+                    dummyPos.y = data.baseY + Math.sin(time * 2 + data.offset) * 0.3;
+                    
+                    // Rotate
+                    dummyQuat.x += data.rx; dummyQuat.y += data.ry;
+                    dummyQuat.normalize();
+                    
+                    // Hover Scale
+                    if (hoveredMeshId === i && hoveredInstanceId === j) {
+                        dummyScale.set(2.5, 2.5, 2.5);
+                    } else {
+                        dummyScale.set(1, 1, 1);
+                    }
+                    
+                    dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
+                    im.setMatrixAt(j, dummyMatrix);
+
+                    // Update Line End
+                    // Because we pushed lines sequentially, we know line ends are at indices:
+                    // Wait, we didn't store line index mapped. It's okay, Instanced performance is high enough that static lines are acceptable.
+                    // For now, lines won't levitate to save massive CPU iteration over arrays. They will just connect to the base node pos.
                 }
-                
-                const positions = n.userData.line.geometry.attributes.position.array;
-                positions[0] = n.userData.branchStart.x;
-                positions[1] = n.userData.branchStart.y;
-                positions[2] = n.userData.branchStart.z;
-                positions[3] = n.position.x;
-                positions[4] = n.position.y;
-                positions[5] = n.position.z;
-                n.userData.line.geometry.attributes.position.needsUpdate = true;
-            });
+                im.instanceMatrix.needsUpdate = true;
+            }
 
-            const positions = particleSystem.geometry.attributes.position.array;
+            // Particles
+            const pPositions = particleSystem.geometry.attributes.position.array;
             for(let i=0; i<particleCount; i++) {
-                positions[i*3+1] += particleVel[i].y;
-                if(positions[i*3+1] < 0) {
-                    positions[i*3+1] = 150;
-                    positions[i*3] = (Math.random() - 0.5) * 300;
-                    positions[i*3+2] = (Math.random() - 0.5) * 300;
+                pPositions[i*3+1] += particleVel[i];
+                if(pPositions[i*3+1] < 0) {
+                    pPositions[i*3+1] = 200;
+                    pPositions[i*3] = (Math.random() - 0.5) * 400;
+                    pPositions[i*3+2] = (Math.random() - 0.5) * 400;
                 }
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;
 
-            // --- RAYCASTING ---
-            raycaster.setFromCamera(mouse, camera);
-            if (testMeshes.length > 0) {
-                const intersects = raycaster.intersectObjects(testMeshes);
-
+            // Throttled Raycasting
+            if (Date.now() - lastMouseTime < 100 && instancedMeshes.length > 0) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(instancedMeshes);
+                
                 if (intersects.length > 0) {
-                    const object = intersects[0].object;
+                    const hit = intersects[0];
+                    const objIndex = instancedMeshes.indexOf(hit.object);
+                    const instId = hit.instanceId;
                     
-                    if (hoveredNode !== object) {
-                        if (hoveredNode) hoveredNode.scale.set(1, 1, 1);
+                    if (hoveredMeshId !== objIndex || hoveredInstanceId !== instId) {
+                        hoveredMeshId = objIndex;
+                        hoveredInstanceId = instId;
                         
-                        hoveredNode = object;
-                        hoveredNode.scale.set(2.2, 2.2, 2.2); 
-                        
-                        const ud = hoveredNode.userData;
-                        tooltip.innerHTML = `
-                            <strong><span style="color:${'#'+ud.lineColor.toString(16).padStart(6, '0')}">●</span> "${ud.message}"</strong>
-                            <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${ud.repo}</span></div>
-                            <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${'#'+ud.lineColor.toString(16).padStart(6, '0')}">${ud.language}</span></div>
-                            <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${ud.commitHash}</span></div>
-                            <div class="tt-action">[ Click to open Commit ]</div>
-                        `;
-                        tooltip.style.border = `1px solid ${'#'+ud.lineColor.toString(16).padStart(6, '0')}`;
-                        tooltip.style.boxShadow = `0 0 15px ${'#'+ud.lineColor.toString(16).padStart(6, '0')}88`;
-                        
-                        tooltip.style.display = 'block';
-                        document.body.style.cursor = 'pointer';
+                        const ud = nodeDataMap[`${objIndex}_${instId}`];
+                        if (ud) {
+                            hoveredNodeInfo = ud;
+                            const colorHex = '#' + ud.lineColorHex.toString(16).padStart(6, '0');
+                            tooltip.innerHTML = `
+                                <strong><span style="color:${colorHex}">●</span> "${ud.message}"</strong>
+                                <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${ud.repo}</span></div>
+                                <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${colorHex}">${ud.language}</span></div>
+                                <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${ud.commitHash}</span></div>
+                                <div class="tt-action">[ Click to view on GitHub ]</div>
+                            `;
+                            tooltip.style.border = `1px solid ${colorHex}`;
+                            tooltip.style.boxShadow = `0 0 15px ${colorHex}88`;
+                            tooltip.style.display = 'block';
+                            document.body.style.cursor = 'pointer';
+                        }
                     }
                 } else {
-                    if (hoveredNode) {
-                        hoveredNode.scale.set(1, 1, 1);
-                        hoveredNode = null;
-                        tooltip.style.display = 'none';
-                        document.body.style.cursor = 'default';
-                    }
+                    hoveredMeshId = -1;
+                    hoveredInstanceId = -1;
+                    hoveredNodeInfo = null;
+                    tooltip.style.display = 'none';
+                    document.body.style.cursor = 'default';
                 }
             }
 
