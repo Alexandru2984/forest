@@ -6,7 +6,7 @@ An organic 3D visualizer for GitHub repositories, built with Go (Backend) and Th
 - **Frontend:** Three.js / WebGL for 3D rendering and visual effects in the browser.
 
 ## Deployment Status
-- Domain: `code.micutu.com`
+- Domain: `forest.micutu.com`
 - SSL: Let's Encrypt via Certbot.
 
 ## TODO
