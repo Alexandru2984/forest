@@ -2,38 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Interactive</title>
+    <title>Code Forest - Live GitHub Data</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
         h1 { margin: 0; font-size: 2em; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 255, 128, 0.5); color: #00ff80; }
         p { margin: 5px 0 0 0; color: #aaa; font-size: 0.9em; }
-        #status { align-self: flex-end; color: #00ff80; text-shadow: 0 0 5px #00ff80; background: rgba(0,255,128,0.1); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.3); }
-        .disconnected { color: #ff3333 !important; text-shadow: 0 0 5px #ff3333 !important; background: rgba(255,51,51,0.1) !important; border-color: rgba(255,51,51,0.3) !important; }
-        #overlay { position: absolute; bottom: 20px; left: 20px; color: #888; font-size: 0.8em; }
-        canvas { display: block; outline: none; }
         
-        /* New Tooltip Style */
-        #tooltip {
-            position: absolute;
-            display: none;
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; }
+        
+        /* GitHub Input Form */
+        #github-form {
+            display: flex;
+            align-items: center;
             background: rgba(10, 20, 15, 0.85);
             border: 1px solid #00ff80;
             box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            color: #fff;
-            pointer-events: none;
-            z-index: 100;
-            font-size: 0.9em;
             backdrop-filter: blur(4px);
-            min-width: 150px;
         }
-        #tooltip strong { color: #00ff80; display: block; margin-bottom: 8px; border-bottom: 1px solid rgba(0,255,128,0.3); padding-bottom: 4px; }
+        #github-form label { margin-right: 10px; color: #00ff80; font-weight: bold; }
+        #github-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 128, 0.5);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: inherit;
+            outline: none;
+            width: 200px;
+            transition: all 0.3s;
+        }
+        #github-input:focus { border-color: #00ff80; box-shadow: 0 0 10px rgba(0, 255, 128, 0.5) inset; }
+        #github-submit {
+            background: #00ff80; color: #000; border: none; padding: 8px 15px; margin-left: 10px;
+            border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; transition: all 0.3s;
+        }
+        #github-submit:hover { background: #fff; box-shadow: 0 0 15px #00ff80; }
+        
+        #status { align-self: flex-end; color: #00ff80; text-shadow: 0 0 5px #00ff80; background: rgba(0,255,128,0.1); padding: 5px 10px; border-radius: 4px; border: 1px solid rgba(0,255,128,0.3); }
+        .error-msg { color: #ff3333 !important; text-shadow: 0 0 5px #ff3333 !important; background: rgba(255,51,51,0.1) !important; border-color: rgba(255,51,51,0.3) !important; }
+        
+        #controls-help { position: absolute; bottom: 20px; left: 20px; color: #888; font-size: 0.85em; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; border: 1px solid #333; }
+        canvas { display: block; outline: none; }
+        
+        /* Tooltip Style */
+        #tooltip {
+            position: absolute; display: none; background: rgba(10, 20, 15, 0.9);
+            border: 1px solid #00ff80; box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+            padding: 15px; border-radius: 8px; color: #fff; pointer-events: none; z-index: 100;
+            font-size: 0.9em; backdrop-filter: blur(4px); min-width: 250px; max-width: 350px;
+        }
+        #tooltip strong { color: #fff; display: block; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px; }
         .tt-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .tt-label { color: #888; }
+        .tt-label { color: #888; margin-right: 15px; flex-shrink: 0; }
+        .tt-value { text-align: right; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tt-action { margin-top: 10px; font-size: 0.8em; color: #ffcc00; text-align: center; border-top: 1px dashed rgba(255,204,0,0.3); padding-top: 5px; }
     </style>
-    <!-- Import Three.js from CDN -->
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
       {
@@ -46,15 +72,29 @@
 </head>
 <body>
     <div id="ui-layer">
-        <div>
-            <h1>🌲 CODE_FOREST</h1>
-            <p>v0.3.0 // INTERACTIVE_RAYCASTING</p>
+        <div class="top-bar">
+            <div>
+                <h1 id="main-title">🌲 CODE_FOREST</h1>
+                <p id="sub-title">v1.0.0 // LIVE_GITHUB_API</p>
+            </div>
+            <div id="github-form">
+                <label for="github-input">TARGET_USER:</label>
+                <input type="text" id="github-input" value="ALexandru2984" placeholder="e.g., torvalds" autocomplete="off" />
+                <button id="github-submit">FETCH</button>
+            </div>
         </div>
-        <div id="status">INIT_CONNECTION...</div>
-        <div id="overlay">Drag to rotate | Scroll to zoom | Hover nodes for info</div>
+        <div id="status">READY</div>
+        <div id="controls-help">
+            <strong>CAMERA CONTROLS:</strong><br>
+            [W][A][S][D] - Move Forward/Left/Back/Right<br>
+            [Q][E] - Move Up/Down<br>
+            [Left Click + Drag] - Rotate View<br>
+            [Scroll] - Zoom In/Out<br>
+            [Hover] - View Commit Data<br>
+            [Click Node] - Open Commit in GitHub
+        </div>
     </div>
     
-    <!-- Tooltip Element -->
     <div id="tooltip"></div>
 
     <script type="module">
@@ -64,12 +104,14 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
+        let currentTargetUser = 'ALexandru2984';
+
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x050505, 0.02);
+        scene.fog = new THREE.FogExp2(0x050505, 0.008);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 15, 35);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.set(0, 30, 80);
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -81,7 +123,7 @@
         const renderScene = new RenderPass(scene, camera);
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
         bloomPass.threshold = 0.1;
-        bloomPass.strength = 1.5;
+        bloomPass.strength = 1.8;
         bloomPass.radius = 0.5;
 
         const composer = new EffectComposer(renderer);
@@ -93,16 +135,29 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.maxPolarAngle = Math.PI / 2 + 0.1;
-        controls.minDistance = 5;
-        controls.maxDistance = 150;
-        controls.target.set(0, 5, 0);
+        controls.minDistance = 2;
+        controls.maxDistance = 500;
+        controls.target.set(0, 10, 0);
+
+        // Custom Keyboard WASD Controls
+        const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
+        window.addEventListener('keydown', (e) => {
+            // ignore if typing in input
+            if (document.activeElement.tagName === 'INPUT') return;
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = false;
+        });
 
         // --- LIGHTS ---
-        const ambientLight = new THREE.AmbientLight(0x112211);
+        const ambientLight = new THREE.AmbientLight(0x223322);
         scene.add(ambientLight);
 
         // --- ENVIRONMENT ---
-        const gridHelper = new THREE.GridHelper(150, 150, 0x00ff80, 0x0a1a10);
+        const gridHelper = new THREE.GridHelper(400, 200, 0x00ff80, 0x0a1a10);
         gridHelper.position.y = 0;
         gridHelper.material.opacity = 0.2;
         gridHelper.material.transparent = true;
@@ -112,82 +167,159 @@
         const treeGroup = new THREE.Group();
         scene.add(treeGroup);
 
-        const colors = [0x00ff80, 0x00ccff, 0xff00cc, 0xffcc00];
-        const exts = ['.go', '.js', '.ts', '.css', '.html', '.md', '.json'];
+        const languageColors = {
+            'JavaScript': 0xf1e05a, 'TypeScript': 0x3178c6, 'Python': 0x3572A5,
+            'Go': 0x00ADD8, 'Rust': 0xdea584, 'C++': 0xf34b7d, 'C#': 0x178600,
+            'Java': 0xb07219, 'HTML': 0xe34c26, 'CSS': 0x563d7c, 'Shell': 0x89e051,
+            'Elixir': 0x6e4a7e, 'Swift': 0xF05138, 'Ruby': 0x701516, 'PHP': 0x4F5D95,
+            'C': 0x555555, 'Lua': 0x000080, 'Vue': 0x41b883
+        };
         
-        function createAbstractTree(x, z, dirName) {
+        let allNodes = [];
+        let testMeshes = [];
+        
+        function createRealRepoTree(x, z, repo, commits) {
             const group = new THREE.Group();
             group.position.set(x, 0, z);
 
-            const height = 3 + Math.random() * 10;
-            const trunkGeo = new THREE.CylinderGeometry(0.1, 0.3, height, 4);
-            const trunkMat = new THREE.MeshBasicMaterial({ color: 0x113322, wireframe: true, transparent: true, opacity: 0.5 });
+            const language = repo.language || 'Unknown';
+            const treeColor = languageColors[language] || 0xaaaaaa;
+
+            const commitCount = Math.max(commits.length, 1); // at least a stump
+            const height = 4 + (commitCount * 0.8); // taller for more commits
+
+            // Trunk
+            const trunkGeo = new THREE.CylinderGeometry(0.3, 1.0, height, 6);
+            const trunkMat = new THREE.MeshBasicMaterial({ color: treeColor, wireframe: true, transparent: true, opacity: 0.4 });
             const trunk = new THREE.Mesh(trunkGeo, trunkMat);
             trunk.position.y = height / 2;
             group.add(trunk);
 
-            const nodeCount = 4 + Math.floor(Math.random() * 20);
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            
-            const nodeGeo = new THREE.IcosahedronGeometry(0.4, 0);
-            const nodeMat = new THREE.MeshBasicMaterial({ color: color });
+            // Inner Glow
+            const glowGeo = new THREE.CylinderGeometry(0.6, 1.5, height, 8);
+            const glowMat = new THREE.MeshBasicMaterial({ color: treeColor, transparent: true, opacity: 0.08 });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            glow.position.y = height / 2;
+            group.add(glow);
 
             const nodes = [];
-            for(let i=0; i<nodeCount; i++) {
-                const node = new THREE.Mesh(nodeGeo, nodeMat);
-                const r = 1 + Math.random() * 4;
+            
+            // Geometries based on color hash
+            const geomType = Math.floor(treeColor % 3);
+            let baseNodeGeo;
+            if (geomType === 0) baseNodeGeo = new THREE.IcosahedronGeometry(0.6, 0); 
+            else if (geomType === 1) baseNodeGeo = new THREE.OctahedronGeometry(0.6, 0); 
+            else baseNodeGeo = new THREE.DodecahedronGeometry(0.6, 0); 
+            
+            for(let i=0; i<commits.length; i++) {
+                const commit = commits[i];
+                const nodeMat = new THREE.MeshBasicMaterial({ color: treeColor });
+                const node = new THREE.Mesh(baseNodeGeo, nodeMat);
+                
+                // Distribute vertically from bottom to top
+                const yPos = 2 + (i * (height - 2) / commitCount) + (Math.random() * 2.0); 
+                const r = 2 + Math.random() * 5 + (yPos * 0.1); 
                 const theta = Math.random() * Math.PI * 2;
-                const yOffset = height - 2 + Math.random() * 5;
                 
-                node.position.set(Math.cos(theta)*r, yOffset, Math.sin(theta)*r);
+                node.position.set(Math.cos(theta)*r, yPos, Math.sin(theta)*r);
                 
-                // MOCK DATA FOR TOOLTIP
-                const ext = exts[Math.floor(Math.random() * exts.length)];
                 node.userData = { 
                     rx: (Math.random() - 0.5) * 0.05, 
                     ry: (Math.random() - 0.5) * 0.05,
-                    baseY: yOffset,
+                    baseY: yPos,
                     offset: Math.random() * 100,
+                    lineColor: treeColor,
                     
-                    // Display Data
-                    name: `module_${Math.floor(Math.random()*900)+100}${ext}`,
-                    path: `/${dirName}/`,
-                    size: (Math.random() * 150 + 1).toFixed(1) + ' KB',
-                    commits: Math.floor(Math.random() * 50) + 1,
-                    author: ['micutu', 'system', 'admin', 'bot'][Math.floor(Math.random()*4)]
+                    repo: repo.full_name,
+                    language: language,
+                    commitHash: commit.sha.substring(0, 7),
+                    message: commit.commit.message.split('\n')[0], // First line of message
+                    url: commit.html_url // REAL COMMIT URL
                 };
                 
                 group.add(node);
                 nodes.push(node);
-            }
 
-            const lineMat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.2 });
-            const trunkTop = new THREE.Vector3(0, height - 1, 0);
-            
-            nodes.forEach(node => {
-                const pts = [trunkTop, node.position];
+                const branchStart = new THREE.Vector3(0, yPos - 1.5, 0);
+                const lineMat = new THREE.LineBasicMaterial({ color: treeColor, transparent: true, opacity: 0.5 });
+                const pts = [branchStart, node.position];
                 const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
                 const line = new THREE.Line(lineGeo, lineMat);
                 group.add(line);
+                
                 node.userData.line = line;
-            });
+                node.userData.branchStart = branchStart;
+            }
 
             treeGroup.add(group);
-            return { group, nodes, trunkTop };
+            return { group, nodes };
         }
 
-        const allNodes = [];
-        const dirNames = ['src', 'lib', 'utils', 'api', 'models', 'components', 'styles', 'config'];
+        // --- GITHUB API FETCHING ---
+        const statusEl = document.getElementById('status');
         
-        for(let i=0; i<60; i++) {
-            const r = Math.random() * 50;
-            const theta = Math.random() * Math.PI * 2;
-            const x = Math.cos(theta) * r;
-            const z = Math.sin(theta) * r;
-            const dName = dirNames[Math.floor(Math.random() * dirNames.length)];
-            const treeData = createAbstractTree(x, z, dName);
-            allNodes.push(...treeData.nodes.map(n => ({ node: n, trunkTop: treeData.trunkTop })));
+        async function fetchGitHubData(username) {
+            statusEl.className = '';
+            statusEl.innerText = 'FETCHING REPOSITORIES...';
+            
+            // Clear existing
+            while(treeGroup.children.length > 0){ treeGroup.remove(treeGroup.children[0]); }
+            allNodes = [];
+            testMeshes = [];
+            
+            try {
+                // Fetch top 15 most recently pushed repos (to avoid hitting API limits too hard)
+                const repoRes = await fetch(`https://api.github.com/users/${username}/repos?per_page=15&sort=pushed`);
+                if (!repoRes.ok) throw new Error(`GitHub API Error: ${repoRes.statusText}`);
+                
+                const repos = await repoRes.json();
+                
+                if (repos.length === 0) {
+                    statusEl.innerText = `NO REPOS FOUND FOR [${username}]`;
+                    statusEl.classList.add('error-msg');
+                    return;
+                }
+
+                statusEl.innerText = `FOUND ${repos.length} REPOS. GROWING FOREST...`;
+
+                for(let i=0; i<repos.length; i++) {
+                    const repo = repos[i];
+                    
+                    // Distribute trees in a spiral/circle
+                    const r = 10 + (i * 4) + Math.random() * 10;
+                    const theta = i * 2.4; // Golden ratio approx spread
+                    const x = Math.cos(theta) * r;
+                    const z = Math.sin(theta) * r;
+                    
+                    // Fetch commits for this repo (max 20)
+                    let commits = [];
+                    try {
+                        const commitRes = await fetch(`https://api.github.com/repos/${repo.full_name}/commits?per_page=20`);
+                        if (commitRes.ok) {
+                            commits = await commitRes.json();
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to fetch commits for ${repo.name}`);
+                    }
+                    
+                    const treeData = createRealRepoTree(x, z, repo, commits);
+                    allNodes.push(...treeData.nodes.map(n => ({ node: n })));
+                    
+                    // Update status progressively
+                    statusEl.innerText = `PLANTED ${i+1}/${repos.length} TREES...`;
+                }
+                
+                testMeshes = allNodes.map(item => item.node);
+                statusEl.innerText = `[LIVE] SYNCED WITH GITHUB: ${username.toUpperCase()}`;
+                
+            } catch (err) {
+                statusEl.innerText = `ERROR: ${err.message}`;
+                statusEl.classList.add('error-msg');
+            }
         }
+
+        // Generate initial forest
+        fetchGitHubData(currentTargetUser);
 
         // --- PARTICLES ---
         const particleCount = 2000;
@@ -196,13 +328,13 @@
         const particleVel = [];
 
         for(let i=0; i<particleCount; i++) {
-            particlePos[i*3] = (Math.random() - 0.5) * 150;
-            particlePos[i*3+1] = Math.random() * 80;
-            particlePos[i*3+2] = (Math.random() - 0.5) * 150;
-            particleVel.push({ y: -0.02 - Math.random() * 0.08 });
+            particlePos[i*3] = (Math.random() - 0.5) * 300;
+            particlePos[i*3+1] = Math.random() * 150;
+            particlePos[i*3+2] = (Math.random() - 0.5) * 300;
+            particleVel.push({ y: -0.05 - Math.random() * 0.1 });
         }
         particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
-        const particleMat = new THREE.PointsMaterial({ color: 0x00ff80, size: 0.15, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+        const particleMat = new THREE.PointsMaterial({ color: 0x88ffcc, size: 0.2, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
         const particleSystem = new THREE.Points(particlesGeo, particleMat);
         scene.add(particleSystem);
 
@@ -213,97 +345,129 @@
         const tooltip = document.getElementById('tooltip');
 
         window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('click', onClick, false);
 
         function onMouseMove(event) {
-            // Calculate mouse position in normalized device coordinates (-1 to +1)
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-            // Offset tooltip so it doesn't sit exactly under the cursor
             tooltip.style.left = (event.clientX + 20) + 'px';
             tooltip.style.top = (event.clientY + 20) + 'px';
         }
 
+        function onClick(event) {
+            if (event.target.closest('.top-bar') || event.target.closest('#tooltip')) return;
+
+            if (hoveredNode && hoveredNode.userData.url) {
+                window.open(hoveredNode.userData.url, '_blank'); // Opens the specific COMMIT URL!
+            }
+        }
+
+        // --- UI LOGIC ---
+        const ghInput = document.getElementById('github-input');
+        const ghSubmit = document.getElementById('github-submit');
+
+        function triggerScan() {
+            const val = ghInput.value.trim();
+            if(val.length > 0) {
+                currentTargetUser = val;
+                bloomPass.strength = 4.0;
+                setTimeout(() => { bloomPass.strength = 1.8; }, 600);
+
+                fetchGitHubData(currentTargetUser);
+            }
+        }
+
+        ghSubmit.addEventListener('click', triggerScan);
+        ghInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') triggerScan();
+        });
+
         // --- ANIMATION LOOP ---
         const clock = new THREE.Clock();
-        const testMeshes = allNodes.map(item => item.node); // Array of just the meshes for Raycaster
 
         function animate() {
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
 
+            // Handle WASD Camera Pan Movement
+            const panSpeed = 1.0;
+            if (keys.w) { camera.translateZ(-panSpeed); controls.target.translateZ(-panSpeed); }
+            if (keys.s) { camera.translateZ(panSpeed); controls.target.translateZ(panSpeed); }
+            if (keys.a) { camera.translateX(-panSpeed); controls.target.translateX(-panSpeed); }
+            if (keys.d) { camera.translateX(panSpeed); controls.target.translateX(panSpeed); }
+            if (keys.q) { camera.position.y -= panSpeed; controls.target.y -= panSpeed; }
+            if (keys.e) { camera.position.y += panSpeed; controls.target.y += panSpeed; }
+
             controls.update();
 
-            // Rotate forest slowly
-            treeGroup.rotation.y = Math.sin(time * 0.02) * 0.05;
+            treeGroup.rotation.y = Math.sin(time * 0.005) * 0.05;
 
-            // Animate nodes
             allNodes.forEach(item => {
                 const n = item.node;
                 n.rotation.x += n.userData.rx;
                 n.rotation.y += n.userData.ry;
                 
-                // Keep base levitation unless hovered
                 if(hoveredNode !== n) {
                     n.position.y = n.userData.baseY + Math.sin(time * 2 + n.userData.offset) * 0.4;
                 }
                 
-                // Update branch line
                 const positions = n.userData.line.geometry.attributes.position.array;
+                positions[0] = n.userData.branchStart.x;
+                positions[1] = n.userData.branchStart.y;
+                positions[2] = n.userData.branchStart.z;
                 positions[3] = n.position.x;
                 positions[4] = n.position.y;
                 positions[5] = n.position.z;
                 n.userData.line.geometry.attributes.position.needsUpdate = true;
             });
 
-            // Particles
             const positions = particleSystem.geometry.attributes.position.array;
             for(let i=0; i<particleCount; i++) {
                 positions[i*3+1] += particleVel[i].y;
                 if(positions[i*3+1] < 0) {
-                    positions[i*3+1] = 80;
-                    positions[i*3] = (Math.random() - 0.5) * 150;
-                    positions[i*3+2] = (Math.random() - 0.5) * 150;
+                    positions[i*3+1] = 150;
+                    positions[i*3] = (Math.random() - 0.5) * 300;
+                    positions[i*3+2] = (Math.random() - 0.5) * 300;
                 }
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;
 
-            // --- DO RAYCASTING ---
+            // --- RAYCASTING ---
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(testMeshes);
+            if (testMeshes.length > 0) {
+                const intersects = raycaster.intersectObjects(testMeshes);
 
-            if (intersects.length > 0) {
-                const object = intersects[0].object;
-                
-                if (hoveredNode !== object) {
-                    // Restore previous node scale
-                    if (hoveredNode) hoveredNode.scale.set(1, 1, 1);
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
                     
-                    // Highlight new node
-                    hoveredNode = object;
-                    hoveredNode.scale.set(1.8, 1.8, 1.8);
-                    
-                    // Update and show Tooltip UI
-                    const ud = hoveredNode.userData;
-                    tooltip.innerHTML = `
-                        <strong>${ud.name}</strong>
-                        <div class="tt-row"><span class="tt-label">Path:</span> <span>${ud.path}</span></div>
-                        <div class="tt-row"><span class="tt-label">Size:</span> <span>${ud.size}</span></div>
-                        <div class="tt-row"><span class="tt-label">Commits:</span> <span>${ud.commits}</span></div>
-                        <div class="tt-row"><span class="tt-label">Author:</span> <span style="color:#00ccff">${ud.author}</span></div>
-                    `;
-                    tooltip.style.display = 'block';
-                    
-                    // Change cursor
-                    document.body.style.cursor = 'crosshair';
-                }
-            } else {
-                if (hoveredNode) {
-                    // Restore scale and hide tooltip
-                    hoveredNode.scale.set(1, 1, 1);
-                    hoveredNode = null;
-                    tooltip.style.display = 'none';
-                    document.body.style.cursor = 'default';
+                    if (hoveredNode !== object) {
+                        if (hoveredNode) hoveredNode.scale.set(1, 1, 1);
+                        
+                        hoveredNode = object;
+                        hoveredNode.scale.set(2.2, 2.2, 2.2); 
+                        
+                        const ud = hoveredNode.userData;
+                        tooltip.innerHTML = `
+                            <strong><span style="color:${'#'+ud.lineColor.toString(16).padStart(6, '0')}">●</span> "${ud.message}"</strong>
+                            <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${ud.repo}</span></div>
+                            <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${'#'+ud.lineColor.toString(16).padStart(6, '0')}">${ud.language}</span></div>
+                            <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${ud.commitHash}</span></div>
+                            <div class="tt-action">[ Click to open Commit ]</div>
+                        `;
+                        tooltip.style.border = `1px solid ${'#'+ud.lineColor.toString(16).padStart(6, '0')}`;
+                        tooltip.style.boxShadow = `0 0 15px ${'#'+ud.lineColor.toString(16).padStart(6, '0')}88`;
+                        
+                        tooltip.style.display = 'block';
+                        document.body.style.cursor = 'pointer';
+                    }
+                } else {
+                    if (hoveredNode) {
+                        hoveredNode.scale.set(1, 1, 1);
+                        hoveredNode = null;
+                        tooltip.style.display = 'none';
+                        document.body.style.cursor = 'default';
+                    }
                 }
             }
 
@@ -311,26 +475,12 @@
         }
         animate();
 
-        // --- RESIZE HANDLER ---
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
+        window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // --- BACKEND CONNECTION ---
-        const statusEl = document.getElementById('status');
-        fetch('/api/')
-            .then(response => response.json())
-            .then(data => {
-                statusEl.innerText = `[CONNECTED] ${data.status.toUpperCase()} // v${data.version}`;
-            })
-            .catch(error => {
-                statusEl.innerText = '[ERR] BACKEND_OFFLINE';
-                statusEl.classList.add('disconnected');
-            });
+        }, false);
     </script>
 </body>
 </html>
