@@ -540,7 +540,12 @@
         window.addEventListener('click', (event) => {
             if (event.target.closest('.top-bar') || event.target.closest('#tooltip')) return;
             if (hoveredNodeInfo && hoveredNodeInfo.url) {
-                window.open(hoveredNodeInfo.url, '_blank');
+                // SECURITY: Prevent javascript: URI execution and arbitrary redirects
+                if (hoveredNodeInfo.url.startsWith('https://github.com/')) {
+                    window.open(hoveredNodeInfo.url, '_blank');
+                } else {
+                    console.warn('Blocked opening invalid URL:', hoveredNodeInfo.url);
+                }
             }
         }, false);
 

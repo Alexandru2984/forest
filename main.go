@@ -399,8 +399,13 @@ func fetchCommits(ctx context.Context, fullName, token string) ([]CommitInfo, er
 			}
 		}
 
+		hash := rc.Sha
+		if len(hash) > 7 {
+			hash = hash[:7]
+		}
+
 		commits = append(commits, CommitInfo{
-			Hash:    rc.Sha[:7], // Short hash
+			Hash:    hash,
 			Message: msg,
 			URL:     rc.HtmlUrl,
 		})
