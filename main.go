@@ -6,9 +6,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"sync"
 	"time"
 )
+
+var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
 
 type StatusResponse struct {
 	Status  string `json:"status"`
@@ -39,6 +42,7 @@ type CacheItem struct {
 var (
 	cache      = make(map[string]CacheItem)
 	cacheMutex sync.RWMutex
+	maxCache   = 100 // Prevent OOM by limiting cache entries
 )
 
 func main() {
@@ -50,8 +54,8 @@ func main() {
 	http.HandleFunc("/github", handleGitHub)
 	http.HandleFunc("//github", handleGitHub)
 
-	port := ":8085"
-	log.Printf("🌲 Code Forest Backend (v3 - Concurrent) is growing on %s...", port)
+	port := "127.0.0.1:8085"
+	log.Printf("🌲 Code Forest Backend (v4.0 - Secured) is growing on %s...", port)
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -59,14 +63,15 @@ func main() {
 
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" && r.URL.Path != "/api/" {
+		log.Printf("404 for path: %s", r.URL.Path)
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(StatusResponse{
 		Status:  "success",
-		Message: "The roots of the Code Forest are active, concurrent and caching.",
-		Version: "3.0.0",
+		Message: "The roots of the Code Forest are active, concurrent, secured, and caching.",
+		Version: "4.0.0",
 	})
 }
 
@@ -77,9 +82,16 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
+	// SECURITY: Strict Regex Validation for GitHub usernames to prevent Path Traversal / SSRF
+	if len(user) > 39 || !validUserRegex.MatchString(user) {
+		http.Error(w, "Invalid 'user' parameter format", http.StatusBadRequest)
+		return
+	}
+	
 	token := r.Header.Get("Authorization")
 
 	if token != "" {
+		// SECURITY: Do not log the actual token, only its length
 		log.Printf("Received authenticated request for user: %s (Token length: %d)", user, len(token))
 	} else {
 		log.Printf("Received UNAUTHENTICATED request for user: %s", user)
@@ -87,7 +99,7 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 
 	cacheKey := user
 	if token != "" {
-		cacheKey = user + "_auth" // Separate cache for authenticated requests
+		cacheKey = user + "_auth"
 	}
 
 	// Check Cache
@@ -110,8 +122,14 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save to Cache (10 minutes)
+	// SECURITY: Prevent Memory Exhaustion (OOM) by capping cache size
 	cacheMutex.Lock()
+	if len(cache) > maxCache {
+		// Extremely simple eviction: clear the whole cache if full to protect the VPS
+		cache = make(map[string]CacheItem)
+		log.Println("Cache capacity reached. Evicting all entries.")
+	}
+	
 	cache[cacheKey] = CacheItem{
 		Data:      repos,
 		ExpiresAt: time.Now().Add(10 * time.Minute),
