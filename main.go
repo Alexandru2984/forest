@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+// SECURITY: Strict GitHub username validation (Max 39 chars, alphanumeric, single hyphens inside)
+var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$`)
 
 type StatusResponse struct {
 	Status  string `json:"status"`
@@ -43,20 +44,33 @@ var (
 	cache      = make(map[string]CacheItem)
 	cacheMutex sync.RWMutex
 	maxCache   = 100 // Prevent OOM by limiting cache entries
+
+	// SECURITY: Cache Stampede (Thundering Herd) prevention
+	flightGroup      = make(map[string]*sync.WaitGroup)
+	flightGroupMutex sync.Mutex
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	http.HandleFunc("/", handleStatus)
-	http.HandleFunc("/api/", handleStatus)
-	http.HandleFunc("/api/github", handleGitHub)
-	http.HandleFunc("/github", handleGitHub)
-	http.HandleFunc("//github", handleGitHub)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handleStatus)
+	mux.HandleFunc("/api/", handleStatus)
+	mux.HandleFunc("/api/github", handleGitHub)
+	mux.HandleFunc("/github", handleGitHub)
+	mux.HandleFunc("//github", handleGitHub)
 
-	port := "127.0.0.1:8085"
-	log.Printf("🌲 Code Forest Backend (v4.0 - Secured) is growing on %s...", port)
-	if err := http.ListenAndServe(port, nil); err != nil {
+	// SECURITY: Mitigate Slowloris and connection exhaustion by setting strict server timeouts
+	srv := &http.Server{
+		Addr:         "127.0.0.1:8085",
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	log.Printf("🌲 Code Forest Backend (v5.0 - Fortified) is growing on %s...", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
@@ -70,8 +84,8 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(StatusResponse{
 		Status:  "success",
-		Message: "The roots of the Code Forest are active, concurrent, secured, and caching.",
-		Version: "4.0.0",
+		Message: "The roots of the Code Forest are active, concurrent, extremely secured, stampede-proof and caching.",
+		Version: "5.0.0",
 	})
 }
 
@@ -82,7 +96,7 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	// SECURITY: Strict Regex Validation for GitHub usernames to prevent Path Traversal / SSRF
+	// SECURITY: Strict Regex Validation for GitHub usernames
 	if len(user) > 39 || !validUserRegex.MatchString(user) {
 		http.Error(w, "Invalid 'user' parameter format", http.StatusBadRequest)
 		return
@@ -91,7 +105,6 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 
 	if token != "" {
-		// SECURITY: Do not log the actual token, only its length
 		log.Printf("Received authenticated request for user: %s (Token length: %d)", user, len(token))
 	} else {
 		log.Printf("Received UNAUTHENTICATED request for user: %s", user)
@@ -102,7 +115,7 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		cacheKey = user + "_auth"
 	}
 
-	// Check Cache
+	// 1. Check Cache initially
 	cacheMutex.RLock()
 	item, found := cache[cacheKey]
 	cacheMutex.RUnlock()
@@ -114,6 +127,45 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 2. SECURITY: Cache Stampede Prevention (Singleflight logic)
+	flightGroupMutex.Lock()
+	if wg, exists := flightGroup[cacheKey]; exists {
+		// A request is already in flight for this user! We wait for it to finish.
+		flightGroupMutex.Unlock()
+		log.Printf("Request deduplication active for user: %s. Waiting...", user)
+		wg.Wait()
+		
+		// The flight finished, data should now be in cache.
+		cacheMutex.RLock()
+		item, found = cache[cacheKey]
+		cacheMutex.RUnlock()
+
+		if found && time.Now().Before(item.ExpiresAt) {
+			log.Printf("Cache HIT (Post-Wait) for user: %s", user)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(item.Data)
+			return
+		}
+		// If still not found, something failed in the flight. Return error.
+		http.Error(w, "Failed to fetch data concurrently", http.StatusBadGateway)
+		return
+	}
+	
+	// Register this as the "Leader" flight
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	flightGroup[cacheKey] = wg
+	flightGroupMutex.Unlock()
+
+	// Ensure we cleanup and unlock the flight group when done
+	defer func() {
+		flightGroupMutex.Lock()
+		delete(flightGroup, cacheKey)
+		flightGroupMutex.Unlock()
+		wg.Done()
+	}()
+
+	// 3. Leader actually fetches from GitHub
 	log.Printf("Cache MISS for user: %s, fetching ALL repos from GitHub concurrently...", user)
 	repos, err := fetchGitHubData(user, token)
 	if err != nil {
@@ -122,11 +174,10 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// SECURITY: Prevent Memory Exhaustion (OOM) by capping cache size
+	// 4. Update Cache
 	cacheMutex.Lock()
 	if len(cache) > maxCache {
-		// Extremely simple eviction: clear the whole cache if full to protect the VPS
-		cache = make(map[string]CacheItem)
+		cache = make(map[string]CacheItem) // Emergency memory sweep
 		log.Println("Cache capacity reached. Evicting all entries.")
 	}
 	
