@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,9 @@ import (
 
 // SECURITY: Strict GitHub username validation (Max 39 chars, alphanumeric, single hyphens inside)
 var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$`)
+
+// SECURITY: Strict Token validation (Bearer format + safe characters only to prevent CRLF injection)
+var validTokenRegex = regexp.MustCompile(`^Bearer [a-zA-Z0-9_.-]+$`)
 
 type StatusResponse struct {
 	Status  string `json:"status"`
@@ -69,7 +73,7 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	log.Printf("🌲 Code Forest Backend (v5.0 - Fortified) is growing on %s...", srv.Addr)
+	log.Printf("🌲 Code Forest Backend (v6.0 - Zero Trust) is growing on %s...", srv.Addr)
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
@@ -84,8 +88,8 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(StatusResponse{
 		Status:  "success",
-		Message: "The roots of the Code Forest are active, concurrent, extremely secured, stampede-proof and caching.",
-		Version: "5.0.0",
+		Message: "The roots of the Code Forest are active, concurrent, extremely secured (Zero Trust), stampede-proof and caching.",
+		Version: "6.0.0",
 	})
 }
 
@@ -105,14 +109,23 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("Authorization")
 
 	if token != "" {
+		// SECURITY: Prevent CRLF Injection and format violations
+		if len(token) > 255 || !validTokenRegex.MatchString(token) {
+			http.Error(w, "Invalid 'Authorization' header format", http.StatusBadRequest)
+			return
+		}
 		log.Printf("Received authenticated request for user: %s (Token length: %d)", user, len(token))
 	} else {
 		log.Printf("Received UNAUTHENTICATED request for user: %s", user)
 	}
 
+	// SECURITY: CRITICAL VULNERABILITY FIX - Cache Key Information Disclosure
+	// We MUST hash the token into the cache key so users cannot steal private repos 
+	// by providing an invalid token for a cached authenticated response.
 	cacheKey := user
 	if token != "" {
-		cacheKey = user + "_auth"
+		tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))
+		cacheKey = user + "_" + tokenHash
 	}
 
 	// 1. Check Cache initially
@@ -130,12 +143,10 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	// 2. SECURITY: Cache Stampede Prevention (Singleflight logic)
 	flightGroupMutex.Lock()
 	if wg, exists := flightGroup[cacheKey]; exists {
-		// A request is already in flight for this user! We wait for it to finish.
 		flightGroupMutex.Unlock()
 		log.Printf("Request deduplication active for user: %s. Waiting...", user)
 		wg.Wait()
 		
-		// The flight finished, data should now be in cache.
 		cacheMutex.RLock()
 		item, found = cache[cacheKey]
 		cacheMutex.RUnlock()
@@ -146,18 +157,15 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(item.Data)
 			return
 		}
-		// If still not found, something failed in the flight. Return error.
 		http.Error(w, "Failed to fetch data concurrently", http.StatusBadGateway)
 		return
 	}
 	
-	// Register this as the "Leader" flight
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	flightGroup[cacheKey] = wg
 	flightGroupMutex.Unlock()
 
-	// Ensure we cleanup and unlock the flight group when done
 	defer func() {
 		flightGroupMutex.Lock()
 		delete(flightGroup, cacheKey)
@@ -174,11 +182,24 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Update Cache
+	// 4. Update Cache Safely (Prevent Cache Thrashing DOS)
 	cacheMutex.Lock()
-	if len(cache) > maxCache {
-		cache = make(map[string]CacheItem) // Emergency memory sweep
-		log.Println("Cache capacity reached. Evicting all entries.")
+	
+	// First, purge any expired items
+	now := time.Now()
+	for k, v := range cache {
+		if now.After(v.ExpiresAt) {
+			delete(cache, k)
+		}
+	}
+	
+	// If still full, evict a single random item instead of the whole cache
+	if len(cache) >= maxCache {
+		log.Println("Cache is at maximum capacity. Evicting a single entry to prevent DOS.")
+		for k := range cache {
+			delete(cache, k)
+			break // Only delete one
+		}
 	}
 	
 	cache[cacheKey] = CacheItem{
@@ -234,7 +255,9 @@ func fetchGitHubData(username, token string) ([]RepoInfo, error) {
 
 		rawRepos = append(rawRepos, pageRepos...)
 
-		if len(pageRepos) < 100 {
+		// SECURITY: Prevent Infinite Pagination DOS (Resource Exhaustion)
+		// Hard stop at 5 pages (500 Repos) to protect server RAM and GitHub limits.
+		if len(pageRepos) < 100 || page >= 5 {
 			break
 		}
 		page++
