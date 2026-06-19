@@ -8,13 +8,17 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
+	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
 // SECURITY: Strict GitHub username validation (Max 39 chars, alphanumeric, single hyphens inside)
-var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$`)
+var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$`)
 
 // SECURITY: Strict Token validation (Bearer format + safe characters only to prevent CRLF injection)
 var validTokenRegex = regexp.MustCompile(`^Bearer [a-zA-Z0-9_.-]+$`)
@@ -76,21 +80,44 @@ func main() {
 	mux.HandleFunc("/api/", handleStatus)
 	mux.HandleFunc("/api/github", handleGitHub)
 	mux.HandleFunc("/github", handleGitHub)
-	mux.HandleFunc("//github", handleGitHub)
+	mux.HandleFunc("/health", handleHealth)
 
 	// SECURITY: Mitigate Slowloris and connection exhaustion by setting strict server timeouts
 	srv := &http.Server{
-		Addr:         "127.0.0.1:8085",
+		Addr:         "127.0.0.1:8089",
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
+		MaxHeaderBytes: 1 << 14, // 16KB max header size
 	}
 
-	log.Printf("🌲 Code Forest Backend (v7.0 - Bulletproof) is growing on %s...", srv.Addr)
-	if err := srv.ListenAndServe(); err != nil {
+	// Graceful shutdown on SIGINT/SIGTERM
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		sig := <-sigChan
+		log.Printf("Received signal %v, shutting down gracefully...", sig)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Fatalf("Graceful shutdown failed: %v", err)
+		}
+		log.Println("Server stopped cleanly.")
+	}()
+
+	log.Printf("🌲 Code Forest Backend (v8.0 - Hardened) is growing on %s...", srv.Addr)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +130,7 @@ func handleStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(StatusResponse{
 		Status:  "success",
 		Message: "The roots of the Code Forest are active, concurrent, extremely secured (Zero Trust), stampede-proof and caching.",
-		Version: "7.0.0",
+		Version: "8.0.0",
 	})
 }
 
@@ -113,13 +140,13 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing 'user' parameter", http.StatusBadRequest)
 		return
 	}
-	
-	// SECURITY: Strict Regex Validation for GitHub usernames
-	if len(user) > 39 || !validUserRegex.MatchString(user) {
+
+	// SECURITY: Strict validation for GitHub usernames.
+	if !isValidGitHubUser(user) {
 		http.Error(w, "Invalid 'user' parameter format", http.StatusBadRequest)
 		return
 	}
-	
+
 	token := r.Header.Get("Authorization")
 
 	if token != "" {
@@ -134,13 +161,17 @@ func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// SECURITY: CRITICAL VULNERABILITY FIX - Cache Key Information Disclosure
-	// We MUST hash the token into the cache key so users cannot steal private repos 
+	// We MUST hash the token into the cache key so users cannot steal private repos
 	// by providing an invalid token for a cached authenticated response.
 	cacheKey := user
 	if token != "" {
 		tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(token)))
 		cacheKey = user + "_" + tokenHash
 	}
+
+	// SECURITY: Retry limit to prevent infinite loops if leader keeps failing
+	const maxRetries = 3
+	retryCount := 0
 
 retry:
 	// 1. Check Cache initially
@@ -161,7 +192,7 @@ retry:
 		flightGroupMutex.Unlock()
 		log.Printf("Request deduplication active for user: %s. Waiting...", user)
 		wg.Wait()
-		
+
 		// SECURITY: Singleflight Cancellation DoS Prevention
 		// If the leader failed or was canceled, we retry becoming the leader.
 		cacheMutex.RLock()
@@ -174,9 +205,16 @@ retry:
 			json.NewEncoder(w).Encode(item.Data)
 			return
 		}
-		goto retry // The leader failed. We will try to lead!
+
+		retryCount++
+		if retryCount >= maxRetries {
+			log.Printf("Max retries (%d) exceeded for user: %s", maxRetries, user)
+			http.Error(w, "Service temporarily unavailable, please retry", http.StatusServiceUnavailable)
+			return
+		}
+		goto retry
 	}
-	
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	flightGroup[cacheKey] = wg
@@ -201,18 +239,19 @@ retry:
 
 	// 3. Leader actually fetches from GitHub
 	log.Printf("Cache MISS for user: %s, fetching ALL repos from GitHub concurrently...", user)
-	
+
 	// Pass the context down!
 	repos, err := fetchGitHubData(r.Context(), user, token)
 	if err != nil {
 		log.Printf("Error fetching GitHub data for %s: %v", user, err)
-		http.Error(w, fmt.Sprintf("%v", err), http.StatusBadGateway)
+		// SECURITY: Do not expose raw GitHub API errors to client
+		http.Error(w, "Failed to fetch data from GitHub. Please try again later.", http.StatusBadGateway)
 		return
 	}
 
 	// 4. Update Cache Safely (Prevent Cache Thrashing DOS)
 	cacheMutex.Lock()
-	
+
 	// First, purge any expired items
 	now := time.Now()
 	for k, v := range cache {
@@ -220,7 +259,7 @@ retry:
 			delete(cache, k)
 		}
 	}
-	
+
 	// If still full, evict a single random item instead of the whole cache
 	if len(cache) >= maxCache {
 		log.Println("Cache is at maximum capacity. Evicting a single entry to prevent DOS.")
@@ -229,7 +268,7 @@ retry:
 			break // Only delete one
 		}
 	}
-	
+
 	cache[cacheKey] = CacheItem{
 		Data:      repos,
 		ExpiresAt: time.Now().Add(10 * time.Minute),
@@ -238,6 +277,13 @@ retry:
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(repos)
+}
+
+func isValidGitHubUser(user string) bool {
+	return len(user) <= 39 &&
+		validUserRegex.MatchString(user) &&
+		!strings.HasSuffix(user, "-") &&
+		!strings.Contains(user, "--")
 }
 
 type RawRepo struct {
@@ -267,15 +313,18 @@ func fetchGitHubData(ctx context.Context, username, token string) ([]RepoInfo, e
 		if err != nil {
 			return nil, err
 		}
-		
+
 		if resp.StatusCode != http.StatusOK {
-			bodyBytes, _ := io.ReadAll(resp.Body)
+			// SECURITY: Limit error body read to prevent OOM on malformed responses
+			bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 			resp.Body.Close()
 			return nil, fmt.Errorf("github api returned status %d: %s", resp.StatusCode, string(bodyBytes))
 		}
 
 		var pageRepos []RawRepo
-		if err := json.NewDecoder(resp.Body).Decode(&pageRepos); err != nil {
+		// SECURITY: Limit JSON body read to 10MB to prevent OOM from malformed responses
+		limitedBody := io.LimitReader(resp.Body, 10<<20)
+		if err := json.NewDecoder(limitedBody).Decode(&pageRepos); err != nil {
 			resp.Body.Close()
 			return nil, err
 		}
@@ -302,14 +351,14 @@ func fetchGitHubData(ctx context.Context, username, token string) ([]RepoInfo, e
 		wg.Add(1)
 		go func(r RawRepo) {
 			defer wg.Done()
-			
+
 			// Respect context when waiting for semaphore
 			select {
 			case sem <- struct{}{}:
 			case <-ctx.Done():
 				return // Abort early!
 			}
-			
+
 			// Optional: slight delay to keep GitHub completely happy
 			select {
 			case <-time.After(150 * time.Millisecond):
@@ -335,9 +384,9 @@ func fetchGitHubData(ctx context.Context, username, token string) ([]RepoInfo, e
 			} else {
 				repo.Commits = commits
 			}
-			
+
 			<-sem // Release token
-			
+
 			mu.Lock()
 			result = append(result, repo)
 			mu.Unlock()

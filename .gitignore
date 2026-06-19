@@ -1,6 +1,7 @@
 # Go
 bin/
 pkg/
+code-forest-backend
 *.exe
 *.exe~
 *.dll

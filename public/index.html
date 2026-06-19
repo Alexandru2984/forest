@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Code Forest - Advanced Filtering</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Forest — Interactive 3D GitHub Visualizer</title>
+    <meta name="description" content="Transform any GitHub profile into a thriving, bioluminescent 3D digital forest. Visualize repositories, commits, and languages in real-time WebGL.">
+    <meta property="og:title" content="Code Forest — Interactive 3D GitHub Visualizer">
+    <meta property="og:description" content="Transform any GitHub profile into a bioluminescent 3D digital forest with real-time WebGL rendering.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forest.micutu.com">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
     <style>
         body { margin: 0; overflow: hidden; background-color: #050505; color: #fff; font-family: 'Courier New', Courier, monospace; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
@@ -71,13 +78,14 @@
         }
       }
     </script>
+    <script defer src="https://analytics.micutu.com/script.js" data-website-id="d5b0f7b7-e6d0-4405-8a76-8dff603f6851"></script>
 </head>
 <body>
     <div id="ui-layer">
         <div class="top-bar">
             <div>
                 <h1 id="main-title">🌲 CODE_FOREST</h1>
-                <p id="sub-title">v4.0.0 // FULL_HISTORY_&_FILTERS</p>
+                <p id="sub-title">v8.0.0 // FULL_HISTORY_&_FILTERS</p>
                 
                 <!-- Filter Controls -->
                 <div id="filter-panel" class="glass-panel" style="margin-top: 15px; pointer-events: auto;">
@@ -141,7 +149,7 @@
 
         const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.toneMapping = THREE.ReinhardToneMapping;
         document.body.appendChild(renderer.domElement);
 
@@ -659,13 +667,14 @@
                         if (ud) {
                             hoveredNodeInfo = ud;
                             const colorHex = '#' + ud.lineColorHex.toString(16).padStart(6, '0');
+                            // SECURITY: All GitHub-sourced data MUST be escaped to prevent XSS
                             tooltip.innerHTML = `
-                                <strong><span style="color:${colorHex}">●</span> "${ud.message}"</strong>
-                                <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${ud.repo}</span></div>
-                                <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${colorHex}">${ud.language}</span></div>
-                                <div class="tt-row"><span class="tt-label">Created:</span> <span class="tt-value">${ud.created}</span></div>
-                                <div class="tt-row"><span class="tt-label">Updated:</span> <span class="tt-value">${ud.updated}</span></div>
-                                <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${ud.commitHash}</span></div>
+                                <strong><span style="color:${colorHex}">●</span> "${escapeHTML(ud.message)}"</strong>
+                                <div class="tt-row" style="margin-top: 8px;"><span class="tt-label">Repo:</span> <span class="tt-value">${escapeHTML(ud.repo)}</span></div>
+                                <div class="tt-row"><span class="tt-label">Language:</span> <span class="tt-value" style="color:${colorHex}">${escapeHTML(ud.language)}</span></div>
+                                <div class="tt-row"><span class="tt-label">Created:</span> <span class="tt-value">${escapeHTML(ud.created)}</span></div>
+                                <div class="tt-row"><span class="tt-label">Updated:</span> <span class="tt-value">${escapeHTML(ud.updated)}</span></div>
+                                <div class="tt-row"><span class="tt-label">Commit:</span> <span class="tt-value" style="color:#aaa">${escapeHTML(ud.commitHash)}</span></div>
                                 <div class="tt-action">[ Click to open Commit ]</div>
                             `;
                             tooltip.style.border = `1px solid ${colorHex}`;
