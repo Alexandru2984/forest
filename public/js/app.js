@@ -22,8 +22,17 @@ const statCommits    = document.getElementById('stat-commits');
 const statLangs      = document.getElementById('stat-langs');
 const statFps        = document.getElementById('stat-fps');
 
+const panelToggle    = document.getElementById('panel-toggle');
+const joystick       = document.getElementById('joystick');
+const joystickKnob   = joystick.querySelector('.joystick-knob');
+
 let currentTargetUser = ghInput.value.trim() || 'Alexandru2984';
 let allFetchedRepos = []; // global state for filtering
+
+// --- ENVIRONMENT CAPABILITIES ---
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isTouch = window.matchMedia('(pointer: coarse)').matches;
+if (isTouch) document.body.classList.add('touch-device');
 
 // --- HELPERS ---
 function setStatus(text, type) {
@@ -48,6 +57,13 @@ function updateStats(repos) {
     statRepos.textContent = repos.length;
     statCommits.textContent = commits;
     statLangs.textContent = langs.size;
+}
+
+// Brief bloom "flash" for transitions — suppressed under reduced-motion.
+function flashBloom(strength, ms) {
+    if (reducedMotion) return;
+    bloomPass.strength = strength;
+    setTimeout(() => { bloomPass.strength = 1.8; }, ms);
 }
 
 // --- SCENE SETUP ---
@@ -345,8 +361,7 @@ function applyFilters() {
         return true;
     });
 
-    bloomPass.strength = 3.5;
-    setTimeout(() => { bloomPass.strength = 1.8; }, 400);
+    flashBloom(3.5, 400);
 
     buildForest(filtered);
     updateStats(filtered);
@@ -450,8 +465,7 @@ function triggerScan() {
     const tokenVal = ghToken.value.trim();
     if (val.length > 0) {
         currentTargetUser = val;
-        bloomPass.strength = 4.0;
-        setTimeout(() => { bloomPass.strength = 1.8; }, 600);
+        flashBloom(4.0, 600);
         fetchGitHubData(currentTargetUser, tokenVal);
     }
 }
@@ -469,6 +483,45 @@ controlsToggle.addEventListener('click', toggleControls);
 controlsToggle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleControls(); }
 });
+
+// Mobile: hide/show the control panels to reveal the forest
+panelToggle.addEventListener('click', () => {
+    const hidden = document.body.classList.toggle('panels-hidden');
+    panelToggle.textContent = hidden ? '✕' : '☰';
+    panelToggle.setAttribute('aria-pressed', hidden ? 'true' : 'false');
+});
+
+// Mobile: analog joystick driving the same fly-camera movement as WASD
+const JOY_RADIUS = 45;
+const joyVec = { x: 0, y: 0 };
+let joyActive = false;
+
+function joyUpdate(e) {
+    if (!joyActive) return;
+    const rect = joystick.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = e.clientX - cx;
+    let dy = e.clientY - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > JOY_RADIUS) { dx = dx / dist * JOY_RADIUS; dy = dy / dist * JOY_RADIUS; }
+    joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    joyVec.x = dx / JOY_RADIUS;
+    joyVec.y = dy / JOY_RADIUS;
+}
+function joyEnd() {
+    joyActive = false;
+    joyVec.x = 0; joyVec.y = 0;
+    joystickKnob.style.transform = 'translate(0, 0)';
+}
+joystick.addEventListener('pointerdown', (e) => {
+    joyActive = true;
+    joystick.setPointerCapture(e.pointerId);
+    joyUpdate(e);
+});
+joystick.addEventListener('pointermove', joyUpdate);
+joystick.addEventListener('pointerup', joyEnd);
+joystick.addEventListener('pointercancel', joyEnd);
 
 // --- ANIMATION LOOP ---
 const clock = new THREE.Clock();
@@ -501,8 +554,16 @@ function animate() {
     if (keys.q) { camera.position.y -= panSpeed; controls.target.y -= panSpeed; }
     if (keys.e) { camera.position.y += panSpeed; controls.target.y += panSpeed; }
 
+    // Analog joystick (touch): up = forward, sideways = strafe
+    if (joyVec.x !== 0 || joyVec.y !== 0) {
+        camera.position.addScaledVector(forward, -joyVec.y * panSpeed);
+        controls.target.addScaledVector(forward, -joyVec.y * panSpeed);
+        camera.position.addScaledVector(right, joyVec.x * panSpeed);
+        controls.target.addScaledVector(right, joyVec.x * panSpeed);
+    }
+
     controls.update();
-    forestGroup.rotation.y = Math.sin(time * 0.003) * 0.03;
+    forestGroup.rotation.y = reducedMotion ? 0 : Math.sin(time * 0.003) * 0.03;
 
     for (let i = 0; i < instancedMeshes.length; i++) {
         const im = instancedMeshes[i];
@@ -513,9 +574,11 @@ function animate() {
             if (!data) continue;
 
             data.origMatrix.decompose(dummyPos, dummyQuat, dummyScale);
-            dummyPos.y = data.baseY + Math.sin(time * 2 + data.offset) * 0.3;
-            dummyQuat.x += data.rx; dummyQuat.y += data.ry;
-            dummyQuat.normalize();
+            if (!reducedMotion) {
+                dummyPos.y = data.baseY + Math.sin(time * 2 + data.offset) * 0.3;
+                dummyQuat.x += data.rx; dummyQuat.y += data.ry;
+                dummyQuat.normalize();
+            }
 
             if (hoveredMeshId === i && hoveredInstanceId === j) {
                 dummyScale.set(2.5, 2.5, 2.5);
@@ -529,17 +592,19 @@ function animate() {
         im.instanceMatrix.needsUpdate = true;
     }
 
-    // Particles
-    const pPositions = particleSystem.geometry.attributes.position.array;
-    for (let i = 0; i < particleCount; i++) {
-        pPositions[i * 3 + 1] += particleVel[i];
-        if (pPositions[i * 3 + 1] < 0) {
-            pPositions[i * 3 + 1] = 400;
-            pPositions[i * 3] = (Math.random() - 0.5) * 800;
-            pPositions[i * 3 + 2] = (Math.random() - 0.5) * 800;
+    // Particles (static under reduced-motion)
+    if (!reducedMotion) {
+        const pPositions = particleSystem.geometry.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+            pPositions[i * 3 + 1] += particleVel[i];
+            if (pPositions[i * 3 + 1] < 0) {
+                pPositions[i * 3 + 1] = 400;
+                pPositions[i * 3] = (Math.random() - 0.5) * 800;
+                pPositions[i * 3 + 2] = (Math.random() - 0.5) * 800;
+            }
         }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
     }
-    particleSystem.geometry.attributes.position.needsUpdate = true;
 
     // Throttled raycasting
     if (Date.now() - lastMouseTime < 100 && instancedMeshes.length > 0) {

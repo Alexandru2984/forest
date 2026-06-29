@@ -709,3 +709,97 @@ select.glass-input option {
         gap: 8px;
     }
 }
+
+/* ==========================================================================
+   Mobile controls: panel toggle + on-screen joystick
+   ========================================================================== */
+
+.icon-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 30;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: var(--color-primary);
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-panel);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Show the panel toggle on small screens or touch devices */
+@media (max-width: 768px) {
+    .icon-btn { display: flex; }
+}
+body.touch-device .icon-btn { display: flex; }
+
+/* When collapsed, hide the heavy input panels to reveal the forest */
+body.panels-hidden #github-form,
+body.panels-hidden #filter-panel {
+    display: none;
+}
+
+#joystick {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 25;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, rgba(0, 255, 128, 0.08), rgba(10, 20, 15, 0.55));
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-panel);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.touch-device #joystick { display: flex; }
+
+.joystick-knob {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #33ffaa, var(--color-primary));
+    box-shadow: 0 0 18px rgba(0, 255, 128, 0.5);
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* ==========================================================================
+   Accessibility: visible focus + reduced motion
+   ========================================================================== */
+
+.glass-btn:focus-visible,
+.glass-input:focus-visible,
+.controls-toggle:focus-visible,
+.icon-btn:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
