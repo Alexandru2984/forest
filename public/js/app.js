@@ -25,9 +25,27 @@ const statFps        = document.getElementById('stat-fps');
 const panelToggle    = document.getElementById('panel-toggle');
 const joystick       = document.getElementById('joystick');
 const joystickKnob   = joystick.querySelector('.joystick-knob');
+const statApi        = document.getElementById('stat-api');
+const repoSearch     = document.getElementById('repo-search');
+const btnRandom      = document.getElementById('btn-random');
+const btnShare       = document.getElementById('btn-share');
+const btnExport      = document.getElementById('btn-export');
+const btnLegend      = document.getElementById('btn-legend');
+const btnOrbit       = document.getElementById('btn-orbit');
+const btnHelp        = document.getElementById('btn-help');
+const rememberToken  = document.getElementById('remember-token');
+const legendEl       = document.getElementById('legend');
+const legendList     = document.getElementById('legend-list');
+const helpModal      = document.getElementById('help-modal');
+const helpClose      = document.getElementById('help-close');
 
 let currentTargetUser = ghInput.value.trim() || 'Alexandru2984';
 let allFetchedRepos = []; // global state for filtering
+let lastRenderedRepos = []; // repos currently drawn (post-filter)
+let repoPositions = {};   // full_name -> THREE.Vector3 (for search focus)
+let highlightedRepo = null;
+let highlightUntil = 0;
+let pendingFilters = {};  // deep-link filters applied after first fetch
 
 // --- ENVIRONMENT CAPABILITIES ---
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -165,6 +183,7 @@ function clearForest() {
     }
 
     nodeDataMap = {};
+    repoPositions = {};
 }
 
 function populateLanguageDropdown(repos) {
@@ -264,6 +283,8 @@ function buildForest(repos) {
             trunkMesh.setColorAt(trunkCount, colorObj);
             trunkCount++;
 
+            repoPositions[repo.full_name] = new THREE.Vector3(x, height / 2, z);
+
             const geomType = Math.floor(treeColorHex % 3);
             const activeIM = instancedMeshes[geomType];
 
@@ -346,6 +367,9 @@ function buildForest(repos) {
         branchLinesMesh = new THREE.LineSegments(lineGeo, lineMat);
         forestGroup.add(branchLinesMesh);
     }
+
+    lastRenderedRepos = repos;
+    if (!legendEl.hidden) buildLegend(repos);
 }
 
 // --- FILTERING LOGIC ---
@@ -383,6 +407,9 @@ async function fetchGitHubData(username, token) {
         }
         const res = await fetch(`/api/github?user=${encodeURIComponent(username)}`, { headers });
 
+        const rl = res.headers.get('X-GitHub-RateLimit-Remaining');
+        if (rl !== null && rl !== '') statApi.textContent = rl;
+
         if (!res.ok) {
             const text = await res.text();
             throw new Error(`Proxy Error ${res.status}: ${text}`);
@@ -405,6 +432,17 @@ async function fetchGitHubData(username, token) {
 
         buildForest(allFetchedRepos);
         setStatus(`[LIVE] SYNCED ${allFetchedRepos.length} REPOS FOR: ${username.toUpperCase()}`, 'success');
+
+        persistSession(username, token);
+
+        // Apply any deep-link filters carried in the URL on first load.
+        if (pendingFilters.lang || pendingFilters.created || pendingFilters.updated) {
+            if (pendingFilters.lang) filterLang.value = pendingFilters.lang;
+            if (pendingFilters.created) filterCreated.value = pendingFilters.created;
+            if (pendingFilters.updated) filterUpdated.value = pendingFilters.updated;
+            pendingFilters = {};
+            applyFilters();
+        }
 
     } catch (err) {
         setStatus(`ERROR: ${err.message}`, 'error');
@@ -523,6 +561,170 @@ joystick.addEventListener('pointermove', joyUpdate);
 joystick.addEventListener('pointerup', joyEnd);
 joystick.addEventListener('pointercancel', joyEnd);
 
+// ==========================================================================
+// FEATURES
+// ==========================================================================
+
+// --- Language legend ---
+function buildLegend(repos) {
+    const counts = {};
+    repos.forEach(r => { const l = r.language || 'Unknown'; counts[l] = (counts[l] || 0) + 1; });
+    const langs = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+
+    legendList.innerHTML = '';
+    langs.forEach(l => {
+        const hex = '#' + (languageColors[l] || 0x888888).toString(16).padStart(6, '0');
+        const row = document.createElement('div');
+        row.className = 'legend-row';
+
+        const sw = document.createElement('span');
+        sw.className = 'legend-swatch';
+        sw.style.background = hex;
+        sw.style.color = hex;
+
+        const name = document.createElement('span');
+        name.textContent = l; // textContent => safe from XSS
+
+        const cnt = document.createElement('span');
+        cnt.className = 'legend-count';
+        cnt.textContent = counts[l];
+
+        row.append(sw, name, cnt);
+        legendList.appendChild(row);
+    });
+}
+
+btnLegend.addEventListener('click', () => {
+    const show = legendEl.hidden;
+    legendEl.hidden = !show;
+    btnLegend.classList.toggle('active', show);
+    btnLegend.setAttribute('aria-pressed', show ? 'true' : 'false');
+    if (show) buildLegend(lastRenderedRepos);
+});
+
+// --- Auto-orbit ---
+btnOrbit.addEventListener('click', () => {
+    controls.autoRotate = !controls.autoRotate;
+    controls.autoRotateSpeed = 0.6;
+    btnOrbit.classList.toggle('active', controls.autoRotate);
+    btnOrbit.setAttribute('aria-pressed', controls.autoRotate ? 'true' : 'false');
+});
+
+// --- Export PNG ---
+btnExport.addEventListener('click', () => {
+    composer.render(); // ensure a fresh frame is in the (preserved) buffer
+    try {
+        const url = renderer.domElement.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `code-forest-${currentTargetUser || 'export'}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setStatus('SAVED FOREST SNAPSHOT (PNG)', 'success');
+    } catch (e) {
+        setStatus(`EXPORT FAILED: ${e.message}`, 'error');
+    }
+});
+
+// --- Shareable link ---
+function buildShareURL() {
+    const params = new URLSearchParams();
+    params.set('user', currentTargetUser);
+    if (filterLang.value) params.set('lang', filterLang.value);
+    if (filterCreated.value) params.set('created', filterCreated.value);
+    if (filterUpdated.value) params.set('updated', filterUpdated.value);
+    return `${location.origin}${location.pathname}?${params.toString()}`;
+}
+
+btnShare.addEventListener('click', async () => {
+    const url = buildShareURL();
+    try {
+        await navigator.clipboard.writeText(url);
+        setStatus('SHAREABLE LINK COPIED TO CLIPBOARD', 'success');
+    } catch (e) {
+        window.prompt('Copy this shareable link:', url);
+    }
+});
+
+// --- Random famous developer ---
+const FAMOUS_DEVS = [
+    'torvalds', 'gaearon', 'sindresorhus', 'antirez', 'tj', 'yyx990803',
+    'mojombo', 'defunkt', 'addyosmani', 'kentcdodds', 'getify', 'fabpot',
+    'dhh', 'wycats', 'bradtraversy', 'pmndrs', 'mrdoob'
+];
+btnRandom.addEventListener('click', () => {
+    const dev = FAMOUS_DEVS[Math.floor(Math.random() * FAMOUS_DEVS.length)];
+    ghInput.value = dev;
+    ghToken.value = '';
+    triggerScan();
+});
+
+// --- Repo search / focus ---
+function focusRepo(query) {
+    query = query.trim().toLowerCase();
+    if (!query) return;
+    const match = Object.keys(repoPositions).find(fn => fn.toLowerCase().includes(query));
+    if (!match) {
+        setStatus(`NO VISIBLE REPO MATCHING "${query.toUpperCase()}"`, 'error');
+        return;
+    }
+    const pos = repoPositions[match];
+    controls.target.copy(pos);
+    const offset = new THREE.Vector3(0.4, 0.6, 1).normalize().multiplyScalar(45);
+    camera.position.copy(pos).add(offset);
+    highlightedRepo = match;
+    highlightUntil = performance.now() + 4000;
+    flashBloom(3.0, 400);
+    setStatus(`FOCUSED: ${match}`, 'success');
+}
+repoSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') focusRepo(repoSearch.value); });
+
+// --- Help modal ---
+function openHelp() { helpModal.hidden = false; }
+function closeHelp() { helpModal.hidden = true; }
+btnHelp.addEventListener('click', openHelp);
+helpClose.addEventListener('click', closeHelp);
+helpModal.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHelp(); });
+
+// --- Session persistence (token kept for this tab only, opt-in) ---
+function persistSession(username, token) {
+    try {
+        sessionStorage.setItem('cf_user', username);
+        if (rememberToken.checked && token && token.trim() !== '') {
+            sessionStorage.setItem('cf_token', token.trim());
+        } else {
+            sessionStorage.removeItem('cf_token');
+        }
+    } catch (e) { /* storage unavailable — ignore */ }
+}
+
+// --- Deep-link + session bootstrap ---
+function initFromURLAndSession() {
+    const params = new URLSearchParams(location.search);
+    let user = params.get('user');
+    let token = '';
+
+    try {
+        const sUser = sessionStorage.getItem('cf_user');
+        const sToken = sessionStorage.getItem('cf_token');
+        if (!user && sUser) user = sUser;
+        if (sToken) { token = sToken; rememberToken.checked = true; }
+    } catch (e) { /* ignore */ }
+
+    if (params.get('lang')) pendingFilters.lang = params.get('lang');
+    if (params.get('created')) pendingFilters.created = params.get('created');
+    if (params.get('updated')) pendingFilters.updated = params.get('updated');
+
+    if (user) {
+        ghInput.value = user;
+        if (token) ghToken.value = token;
+        triggerScan();
+    }
+}
+initFromURLAndSession();
+
 // --- ANIMATION LOOP ---
 const clock = new THREE.Clock();
 const dummyMatrix = new THREE.Matrix4();
@@ -540,6 +742,8 @@ let fpsLast = performance.now();
 function animate() {
     requestAnimationFrame(animate);
     const time = clock.getElapsedTime();
+
+    if (highlightedRepo && performance.now() > highlightUntil) highlightedRepo = null;
 
     const panSpeed = 2.0;
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -580,11 +784,10 @@ function animate() {
                 dummyQuat.normalize();
             }
 
-            if (hoveredMeshId === i && hoveredInstanceId === j) {
-                dummyScale.set(2.5, 2.5, 2.5);
-            } else {
-                dummyScale.set(1, 1, 1);
-            }
+            let nodeScale = 1;
+            if (hoveredMeshId === i && hoveredInstanceId === j) nodeScale = 2.5;
+            else if (highlightedRepo && data.repo === highlightedRepo) nodeScale = 1.8;
+            dummyScale.set(nodeScale, nodeScale, nodeScale);
 
             dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
             im.setMatrixAt(j, dummyMatrix);

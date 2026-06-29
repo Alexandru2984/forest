@@ -66,6 +66,17 @@
                     </div>
                     <button id="filter-btn" class="glass-btn" type="button">Apply</button>
                 </div>
+
+                <!-- Actions toolbar -->
+                <div id="actions" class="glass-panel">
+                    <input type="search" id="repo-search" class="glass-input" placeholder="Find repo…" autocomplete="off" aria-label="Search repositories by name" />
+                    <button id="btn-random" class="glass-btn ghost" type="button" title="Visualize a random famous developer" aria-label="Random famous developer">🎲</button>
+                    <button id="btn-share" class="glass-btn ghost" type="button" title="Copy shareable link" aria-label="Copy shareable link">🔗</button>
+                    <button id="btn-export" class="glass-btn ghost" type="button" title="Export forest as PNG" aria-label="Export PNG">📷</button>
+                    <button id="btn-legend" class="glass-btn ghost" type="button" title="Toggle language legend" aria-label="Toggle language legend" aria-pressed="false">🎨</button>
+                    <button id="btn-orbit" class="glass-btn ghost" type="button" title="Toggle auto-orbit" aria-label="Toggle auto-orbit" aria-pressed="false">⏯</button>
+                    <button id="btn-help" class="glass-btn ghost" type="button" title="Help" aria-label="Help">❓</button>
+                </div>
             </div>
 
             <!-- Target User -->
@@ -74,6 +85,7 @@
                 <input type="text" id="github-input" value="Alexandru2984" placeholder="e.g. torvalds" autocomplete="off" autocapitalize="off" spellcheck="false" class="glass-input" aria-label="GitHub username" />
                 <label for="github-token">Token (opt)</label>
                 <input type="password" id="github-token" placeholder="ghp_…" autocomplete="off" class="glass-input" aria-label="GitHub personal access token (optional)" />
+                <label class="checkbox-label"><input type="checkbox" id="remember-token" /> Remember</label>
                 <button id="github-submit" class="glass-btn pulse-idle" type="button">Fetch</button>
             </div>
         </div>
@@ -102,6 +114,36 @@
         <div class="stat-item"><span class="stat-label">Langs</span><span class="stat-value" id="stat-langs">0</span></div>
         <div class="stat-divider"></div>
         <div class="stat-item"><span class="stat-label">FPS</span><span class="stat-value" id="stat-fps">--</span></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><span class="stat-label" title="GitHub API requests remaining">API</span><span class="stat-value" id="stat-api">—</span></div>
+    </div>
+
+    <!-- Language legend -->
+    <div id="legend" hidden>
+        <div class="legend-title">Languages</div>
+        <div id="legend-list"></div>
+    </div>
+
+    <!-- Help modal -->
+    <div id="help-modal" class="modal-overlay" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+            <button id="help-close" class="modal-close" type="button" aria-label="Close help">✕</button>
+            <h2 id="help-title">🌲 Code Forest</h2>
+            <p>Every <strong>tree</strong> is a repository, every glowing <strong>leaf</strong> a commit, and each language paints its own sector of the forest.</p>
+            <h3>Navigation</h3>
+            <ul>
+                <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Q</kbd><kbd>E</kbd> up/down</li>
+                <li><kbd>Drag</kbd> rotate · <kbd>Scroll</kbd> zoom · on mobile use the joystick &amp; pinch</li>
+                <li><kbd>Hover</kbd> a leaf for details · <kbd>Click</kbd> to open the commit</li>
+            </ul>
+            <h3>Tools</h3>
+            <ul>
+                <li>🎲 random famous dev · 🔗 copy a shareable link · 📷 export PNG</li>
+                <li>🎨 language legend · ⏯ auto-orbit · 🔎 find a repo by name</li>
+                <li>Filter by language or date, then <strong>Apply</strong></li>
+            </ul>
+            <p class="modal-foot">Add a GitHub token for private repos &amp; higher rate limits — tick <em>Remember</em> to keep it for this tab only.</p>
+        </div>
     </div>
 
     <!-- Mobile: toggle the control panels to reveal the forest -->
