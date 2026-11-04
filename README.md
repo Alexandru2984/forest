@@ -33,15 +33,17 @@ Production already uses port 8089 on this VPS, so local preview examples use 180
 
 ```sh
 make check             # formatting, vet, Go race tests, model tests, asset integrity
-make security          # pinned govulncheck + npm audit
+make security          # pinned govulncheck + npm audit + vendored renderer advisory check
 npx playwright install --with-deps chromium --only-shell
 npm run test:browser   # desktop/mobile, errors, storage/export privacy, XSS and axe
 make build
 ```
 
+Open Graph/Twitter metadata, a 1200×630 share image, structured application data, robots.txt and a canonical sitemap are included. Re-render the vector share-card source with `npm run share:image` after installing the test browser. Search engines still decide whether and when to index the application.
+
 Browser tests mock GitHub and do not use real credentials or GitHub quota. CI starts its own local server; development reuses an existing preview on port 18089 if available. Traces and screenshots are written to ignored `test-results/`. CI is read-only, uses pinned action commits, installs locked dependencies without lifecycle scripts and uploads diagnostics only on failure. GitHub Actions execution requires pushing these commits; a local run does not prove a remote workflow has executed.
 
-The vendored runtime is three.js **0.150.1**, with its MIT license and SHA-256 manifest under `public/vendor/three/`. `npm run check:assets` validates the manifest and local import graph. Keep runtime and addons on the same version when upgrading. There are no production npm or external Go module dependencies.
+The vendored runtime is three.js **0.150.1**, with its MIT license and SHA-256 manifest under `public/vendor/three/`. `npm run check:assets` validates the manifest and local import graph. Keep runtime and addons on the same version when upgrading. The security target also queries npm advisories for the vendored version, which is outside the npm dependency tree. There are no production npm or external Go module dependencies.
 
 ## Configuration
 

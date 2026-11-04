@@ -60,3 +60,11 @@ Same-origin module requests are accepted for the current request origin, includi
 The new explorer removes third-party executable scripts and external fonts, deletes legacy browser token entries and keeps optional PATs only in memory. GitHub-sourced strings render as text; repository and commit links are constrained to canonical GitHub URLs. CSV exports neutralize spreadsheet formulas, and JSON exports use an explicit public-data schema.
 
 Browser verification covers demo isolation, search/filter/sort, device-local favorites, public deep links, token storage/export boundaries, empty profiles, upstream failures, XSS payloads, dialog focus, no-WebGL fallback, reduced motion, collection pagination and layouts at 320, 375, 768, 844 and 1440 pixels. All 16 functional/responsive scenarios passed. Axe then caught visible-label/accessibility-name mismatches, which were corrected; the WCAG 2.1 AA automated accessibility scenario passed on recheck. Final release checks repeat the suite against the built release. Automated axe checks are not a full manual accessibility conformance assessment.
+
+## Build, SEO and CI protections
+
+The final app entry and stylesheet use new URLs, with a minimal legacy module that clears old session credentials and refreshes a cached v9 shell. New HTML and static modules require revalidation. API storage remains prohibited. The single embedded release keeps HTML and its CSP hashes consistent, including non-executable structured application metadata.
+
+CI uses read-only GitHub permissions, full action commit pins, locked development packages, no npm lifecycle scripts, race tests, model/browser/accessibility checks, renderer integrity/import verification and source/npm/vendor-advisory scans. Remote GitHub Actions execution is not claimed until these local commits are pushed and a workflow actually runs.
+
+A shared runtime Unix identity was also identified. The project-specific systemd drop-in selects a dedicated dynamic account; it must pass a sandboxed preview before activation. Host-wide tunnel/account controls and mutually untrusted deployment-owner processes remain outside this app-level isolation.

@@ -301,3 +301,33 @@ test("desktop explorer has no automatic WCAG 2.1 AA accessibility violations", a
         .analyze();
     expect(results.violations).toEqual([]);
 });
+
+test("a cached legacy HTML shell upgrades without retaining its session token", async ({
+    page,
+}) => {
+    await page.route("**/?legacy=1", (route) =>
+        route.fulfill({
+            contentType: "text/html",
+            body: '<!doctype html><html lang="en"><head><title>Legacy shell</title></head><body><script type="module" src="/js/app.js"></script></body></html>',
+        }),
+    );
+    await page.addInitScript(() =>
+        sessionStorage.setItem("cf_token", "legacy-secret"),
+    );
+    await page.goto("/?legacy=1");
+    await expect(page.locator(".repo-card")).toHaveCount(16);
+    expect(page.url()).toContain("release=10.0.0");
+    expect(
+        await page.evaluate(() => sessionStorage.getItem("cf_token")),
+    ).toBeNull();
+});
+test("PNG export downloads a rendered image", async ({ page }) => {
+    await demo(page);
+    await expect(page.locator("#snapshot-button")).toBeEnabled();
+    const downloaded = page.waitForEvent("download");
+    await page.locator("#snapshot-button").click();
+    const download = await downloaded;
+    const bytes = await readFile(await download.path());
+    expect(bytes.subarray(1, 4).toString()).toBe("PNG");
+    expect(bytes.length).toBeGreaterThan(1000);
+});

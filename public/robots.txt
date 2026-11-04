@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /github
+Disallow: /health
+
+Sitemap: https://forest.micutu.com/sitemap.xml

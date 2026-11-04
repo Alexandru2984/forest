@@ -1,33 +1,54 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend:
-    name: Go build & test
+  verify:
+    name: Product, security and browser checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOMAXPROCS: "2"
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          go-version: '1.22'
-
-      - name: gofmt
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "These files need gofmt:"; echo "$unformatted"; exit 1
-          fi
-
-      - name: go vet
-        run: go vet ./...
-
-      - name: go test
-        run: go test -count=1 -cover ./...
-
-      - name: go build
-        run: go build -ldflags="-s -w" -o code-forest-backend main.go
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install locked development dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+      - name: Formatting, race tests, frontend logic and asset integrity
+        run: make check
+      - name: Source and dependency vulnerability scans
+        run: make security
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium --only-shell
+      - name: Browser, responsive and accessibility tests
+        run: npm run test:browser
+      - name: Build standalone release
+        run: make build
+      - name: Keep browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: browser-diagnostics
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

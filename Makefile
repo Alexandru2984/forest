@@ -32,6 +32,7 @@ check: fmt-check vet test frontend
 security:
 	go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
 	npm audit --audit-level=high
+	npm run audit:vendor
 
 # Informational only: the Go server generates these hashes from embedded HTML.
 csp-hash:

@@ -12,12 +12,69 @@
         />
         <link rel="canonical" href="https://forest.micutu.com/" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="stylesheet" href="/css/style.css" />
+        <link rel="stylesheet" href="/css/explorer.css" />
         <script type="importmap">
             {
                 "imports": {
                     "three": "/vendor/three/build/three.module.js",
                     "three/addons/": "/vendor/three/examples/jsm/"
+                }
+            }
+        </script>
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Code Forest" />
+        <meta
+            property="og:title"
+            content="Code Forest — Every repo. A little more alive."
+        />
+        <meta
+            property="og:description"
+            content="Explore public GitHub projects as an interactive forest. Search repositories, discover languages and inspect recent commit samples."
+        />
+        <meta property="og:url" content="https://forest.micutu.com/" />
+        <meta
+            property="og:image"
+            content="https://forest.micutu.com/social-card.png"
+        />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content="Code Forest: Every repo, a little more alive, with a colorful forest of repository trees."
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+            name="twitter:title"
+            content="Code Forest — Every repo. A little more alive."
+        />
+        <meta
+            name="twitter:description"
+            content="A fresh perspective on public GitHub projects. Interactive trees, useful filters and recent commit samples."
+        />
+        <meta
+            name="twitter:image"
+            content="https://forest.micutu.com/social-card.png"
+        />
+        <meta
+            name="twitter:image:alt"
+            content="Code Forest repository trees on a dark green landscape."
+        />
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "WebApplication",
+                "name": "Code Forest",
+                "url": "https://forest.micutu.com/",
+                "description": "An interactive 3D forest and accessible collection for exploring public GitHub repositories and recent commit samples.",
+                "applicationCategory": "DeveloperApplication",
+                "operatingSystem": "Any modern browser",
+                "isAccessibleForFree": true,
+                "image": "https://forest.micutu.com/social-card.png",
+                "inLanguage": "en",
+                "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
                 }
             }
         </script>
@@ -39,7 +96,7 @@
                     Field guide <span aria-hidden="true">↗</span></button
                 ><a
                     class="header-link"
-                    href="https://github.com"
+                    href="https://github.com/Alexandru2984/forest"
                     target="_blank"
                     rel="noopener noreferrer"
                     >GitHub ↗</a
@@ -326,6 +383,7 @@
                                 ↺ Reset view</button
                             ><button
                                 id="snapshot-button"
+                                disabled
                                 class="tool-button"
                                 type="button"
                             >
@@ -513,6 +571,6 @@
                 inspect recent commit samples. No sign-in is required.
             </p></noscript
         >
-        <script type="module" src="/js/app.js"></script>
+        <script type="module" src="/js/explorer.js"></script>
     </body>
 </html>

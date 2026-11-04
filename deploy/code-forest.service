@@ -13,9 +13,13 @@ Type=simple
 # Binary location — adjust to your deploy path.
 WorkingDirectory=/opt/code-forest
 ExecStart=/opt/code-forest/code-forest-backend
-EnvironmentFile=/etc/code-forest.env
+EnvironmentFile=-/etc/code-forest.env
+Environment=GOMEMLIMIT=192MiB
+Environment=GOMAXPROCS=2
 Restart=on-failure
 RestartSec=2s
+TimeoutStopSec=35s
+UMask=0077
 
 # --- Sandboxing / hardening ---
 DynamicUser=yes
@@ -37,7 +41,7 @@ MemoryDenyWriteExecute=yes
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
 # Only needs outbound TCP to api.github.com and the local listener.
-RestrictAddressFamilies=AF_INET AF_INET6
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 CapabilityBoundingSet=
 
 # --- Resource limits ---

@@ -8,7 +8,9 @@
     "test:browser": "playwright test",
     "check:assets": "node scripts/check-assets.js",
     "format:check": "prettier --check public/index.html public/css public/js public/data scripts tests package.json package-lock.json playwright.config.js .github README.md docs",
-    "format": "prettier --write public/index.html public/css public/js public/data scripts tests package.json package-lock.json playwright.config.js .github README.md docs"
+    "format": "prettier --write public/index.html public/css public/js public/data scripts tests package.json package-lock.json playwright.config.js .github README.md docs",
+    "share:image": "node scripts/render-share-image.js",
+    "audit:vendor": "node scripts/audit-vendor.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",

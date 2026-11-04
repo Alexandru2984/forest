@@ -216,9 +216,9 @@ func newHandler() http.Handler {
 
 var contentSecurityPolicy = func() string {
 	html, _ := publicFiles.ReadFile("public/index.html")
-	match := regexp.MustCompile(`(?s)<script type="importmap">(.*?)</script>`).FindSubmatch(html)
+	matches := regexp.MustCompile(`(?s)<script type="(?:importmap|application/ld\+json)">(.*?)</script>`).FindAllSubmatch(html, -1)
 	script := "'self'"
-	if len(match) > 1 {
+	for _, match := range matches {
 		hash := sha256.Sum256(match[1])
 		script += " 'sha256-" + base64.StdEncoding.EncodeToString(hash[:]) + "'"
 	}
@@ -376,7 +376,7 @@ func isValidGitHubUser(user string) bool {
 
 func handleGitHub(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
-	w.Header().Add("Vary", "Authorization")
+	w.Header().Set("Vary", "Authorization, Origin")
 	if r.Method != http.MethodGet {
 		w.Header().Set("Allow", "GET, OPTIONS")
 		apiError(w, 405, "method_not_allowed", "Method Not Allowed")
