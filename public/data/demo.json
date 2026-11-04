@@ -1,0 +1,1539 @@
+[
+  {
+    "name": "canopy",
+    "full_name": "demo/canopy",
+    "language": "TypeScript",
+    "description": "A calmer workspace for ideas, notes and the next big thing.",
+    "url": "https://github.com/demo/canopy",
+    "topics": ["productivity", "notes"],
+    "stars": 1842,
+    "forks": 131,
+    "open_issues": 0,
+    "fork": false,
+    "archived": false,
+    "created_at": "2020-03-12T12:00:00Z",
+    "updated_at": "2026-10-31T12:00:00Z",
+    "pushed_at": "2026-10-31T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0001000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/canopy/commit/000100000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000012",
+        "date": "2026-10-11T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000013",
+        "date": "2026-10-10T12:00:00Z"
+      },
+      {
+        "hash": "0001000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/canopy/commit/0001000000000000000000000000000000000014",
+        "date": "2026-10-09T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "wildflower",
+    "full_name": "demo/wildflower",
+    "language": "Python",
+    "description": "Small experiments in generative art and computational botany.",
+    "url": "https://github.com/demo/wildflower",
+    "topics": ["generative-art", "creative-coding"],
+    "stars": 957,
+    "forks": 68,
+    "open_issues": 1,
+    "fork": false,
+    "archived": false,
+    "created_at": "2021-03-12T12:00:00Z",
+    "updated_at": "2026-10-30T12:00:00Z",
+    "pushed_at": "2026-10-30T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0002000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/wildflower/commit/000200000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "0002000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/wildflower/commit/0002000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "moss",
+    "full_name": "demo/moss",
+    "language": "Go",
+    "description": "A tiny, thoughtful HTTP toolkit for services that just work.",
+    "url": "https://github.com/demo/moss",
+    "topics": ["http", "developer-tools"],
+    "stars": 1204,
+    "forks": 86,
+    "open_issues": 2,
+    "fork": false,
+    "archived": false,
+    "created_at": "2022-03-12T12:00:00Z",
+    "updated_at": "2026-10-29T12:00:00Z",
+    "pushed_at": "2026-10-29T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0003000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/moss/commit/0003000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/moss/commit/000300000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/moss/commit/000300000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/moss/commit/000300000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/moss/commit/000300000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0003000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/moss/commit/000300000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "firefly",
+    "full_name": "demo/firefly",
+    "language": "Rust",
+    "description": "A fast terminal companion with a soft spot for good ergonomics.",
+    "url": "https://github.com/demo/firefly",
+    "topics": ["cli", "terminal"],
+    "stars": 2418,
+    "forks": 172,
+    "open_issues": 3,
+    "fork": false,
+    "archived": false,
+    "created_at": "2023-03-12T12:00:00Z",
+    "updated_at": "2026-10-28T12:00:00Z",
+    "pushed_at": "2026-10-28T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0004000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/firefly/commit/0004000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/firefly/commit/000400000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0004000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/firefly/commit/000400000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "greenhouse",
+    "full_name": "demo/greenhouse",
+    "language": "JavaScript",
+    "description": "An open collection of accessible UI experiments.",
+    "url": "https://github.com/demo/greenhouse",
+    "topics": ["accessibility", "components"],
+    "stars": 786,
+    "forks": 56,
+    "open_issues": 4,
+    "fork": false,
+    "archived": false,
+    "created_at": "2024-03-12T12:00:00Z",
+    "updated_at": "2026-10-27T12:00:00Z",
+    "pushed_at": "2026-10-27T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0005000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/greenhouse/commit/000500000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000012",
+        "date": "2026-10-11T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000013",
+        "date": "2026-10-10T12:00:00Z"
+      },
+      {
+        "hash": "0005000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/greenhouse/commit/0005000000000000000000000000000000000014",
+        "date": "2026-10-09T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "fern",
+    "full_name": "demo/fern",
+    "language": "CSS",
+    "description": "Fluid layouts, natural rhythms and a few beautiful details.",
+    "url": "https://github.com/demo/fern",
+    "topics": ["design", "responsive"],
+    "stars": 624,
+    "forks": 44,
+    "open_issues": 5,
+    "fork": false,
+    "archived": false,
+    "created_at": "2025-03-12T12:00:00Z",
+    "updated_at": "2026-10-26T12:00:00Z",
+    "pushed_at": "2026-10-26T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0006000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/fern/commit/000600000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "0006000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/fern/commit/0006000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "riverbed",
+    "full_name": "demo/riverbed",
+    "language": "Python",
+    "description": "Make messy datasets flow into something meaningful.",
+    "url": "https://github.com/demo/riverbed",
+    "topics": ["data", "visualization"],
+    "stars": 452,
+    "forks": 32,
+    "open_issues": 6,
+    "fork": false,
+    "archived": false,
+    "created_at": "2020-03-12T12:00:00Z",
+    "updated_at": "2026-10-25T12:00:00Z",
+    "pushed_at": "2026-10-25T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0007000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/riverbed/commit/0007000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/riverbed/commit/000700000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/riverbed/commit/000700000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/riverbed/commit/000700000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/riverbed/commit/000700000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0007000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/riverbed/commit/000700000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "seedling",
+    "full_name": "demo/seedling",
+    "language": "TypeScript",
+    "description": "A gentle starting point for your next web application.",
+    "url": "https://github.com/demo/seedling",
+    "topics": ["starter", "web"],
+    "stars": 533,
+    "forks": 38,
+    "open_issues": 0,
+    "fork": false,
+    "archived": false,
+    "created_at": "2021-03-12T12:00:00Z",
+    "updated_at": "2026-10-24T12:00:00Z",
+    "pushed_at": "2026-10-24T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0008000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/seedling/commit/0008000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/seedling/commit/000800000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0008000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/seedling/commit/000800000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "trailhead",
+    "full_name": "demo/trailhead",
+    "language": "Go",
+    "description": "A simple route planner for curious weekend explorers.",
+    "url": "https://github.com/demo/trailhead",
+    "topics": ["maps", "outdoors"],
+    "stars": 178,
+    "forks": 12,
+    "open_issues": 1,
+    "fork": true,
+    "archived": false,
+    "created_at": "2022-03-12T12:00:00Z",
+    "updated_at": "2026-10-23T12:00:00Z",
+    "pushed_at": "2026-10-23T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "0009000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/trailhead/commit/000900000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000012",
+        "date": "2026-10-11T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000013",
+        "date": "2026-10-10T12:00:00Z"
+      },
+      {
+        "hash": "0009000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/trailhead/commit/0009000000000000000000000000000000000014",
+        "date": "2026-10-09T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "nightjar",
+    "full_name": "demo/nightjar",
+    "language": "Rust",
+    "description": "Local-first search for your personal constellation of files.",
+    "url": "https://github.com/demo/nightjar",
+    "topics": ["search", "local-first"],
+    "stars": 867,
+    "forks": 61,
+    "open_issues": 2,
+    "fork": false,
+    "archived": false,
+    "created_at": "2023-03-12T12:00:00Z",
+    "updated_at": "2026-10-22T12:00:00Z",
+    "pushed_at": "2026-10-22T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "000a000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/nightjar/commit/000a00000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "000a000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/nightjar/commit/000a000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "lichen",
+    "full_name": "demo/lichen",
+    "language": "JavaScript",
+    "description": "Bring the little details of your garden to life.",
+    "url": "https://github.com/demo/lichen",
+    "topics": ["gardening", "interactive"],
+    "stars": 216,
+    "forks": 15,
+    "open_issues": 3,
+    "fork": false,
+    "archived": false,
+    "created_at": "2024-03-12T12:00:00Z",
+    "updated_at": "2026-10-21T12:00:00Z",
+    "pushed_at": "2026-10-21T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "000b000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/lichen/commit/000b000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/lichen/commit/000b00000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/lichen/commit/000b00000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/lichen/commit/000b00000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/lichen/commit/000b00000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "000b000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/lichen/commit/000b00000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "rootkit-ui",
+    "full_name": "demo/rootkit-ui",
+    "language": "CSS",
+    "description": "A library of little layout ideas, grown with care.",
+    "url": "https://github.com/demo/rootkit-ui",
+    "topics": ["design-system", "css"],
+    "stars": 312,
+    "forks": 22,
+    "open_issues": 4,
+    "fork": false,
+    "archived": false,
+    "created_at": "2025-03-12T12:00:00Z",
+    "updated_at": "2026-10-20T12:00:00Z",
+    "pushed_at": "2026-10-20T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "000c000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c00000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "000c000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/rootkit-ui/commit/000c00000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "bluebell",
+    "full_name": "demo/bluebell",
+    "language": "Swift",
+    "description": "A tiny field journal for the things you notice.",
+    "url": "https://github.com/demo/bluebell",
+    "topics": ["ios", "journal"],
+    "stars": 128,
+    "forks": 9,
+    "open_issues": 5,
+    "fork": false,
+    "archived": false,
+    "created_at": "2020-03-12T12:00:00Z",
+    "updated_at": "2026-10-19T12:00:00Z",
+    "pushed_at": "2026-10-19T12:00:00Z",
+    "commit_status": "sampled",
+    "commits": [
+      {
+        "hash": "000d000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000001",
+        "date": "2026-10-28T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000002",
+        "date": "2026-10-27T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000003",
+        "date": "2026-10-26T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000004",
+        "date": "2026-10-25T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000005",
+        "date": "2026-10-24T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000006",
+        "date": "2026-10-23T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000007",
+        "date": "2026-10-22T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000008",
+        "date": "2026-10-21T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000009",
+        "date": "2026-10-20T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000a",
+        "date": "2026-10-19T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000b",
+        "date": "2026-10-18T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000c",
+        "date": "2026-10-17T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000d",
+        "date": "2026-10-16T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000e",
+        "date": "2026-10-15T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/bluebell/commit/000d00000000000000000000000000000000000f",
+        "date": "2026-10-14T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Refine the first-run experience",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000010",
+        "date": "2026-10-13T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Improve keyboard navigation",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000011",
+        "date": "2026-10-12T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Add a little more breathing room",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000012",
+        "date": "2026-10-11T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Make the small screen experience feel natural",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000013",
+        "date": "2026-10-10T12:00:00Z"
+      },
+      {
+        "hash": "000d000",
+        "message": "Document the next steps",
+        "url": "https://github.com/demo/bluebell/commit/000d000000000000000000000000000000000014",
+        "date": "2026-10-09T12:00:00Z"
+      }
+    ]
+  },
+  {
+    "name": "sundial",
+    "full_name": "demo/sundial",
+    "language": "Ruby",
+    "description": "A small scheduling library with readable, friendly APIs.",
+    "url": "https://github.com/demo/sundial",
+    "topics": ["scheduling", "library"],
+    "stars": 99,
+    "forks": 7,
+    "open_issues": 6,
+    "fork": false,
+    "archived": false,
+    "created_at": "2021-03-12T12:00:00Z",
+    "updated_at": "2026-10-18T12:00:00Z",
+    "pushed_at": "2026-10-18T12:00:00Z",
+    "commit_status": "not_sampled",
+    "commits": []
+  },
+  {
+    "name": "evergreen",
+    "full_name": "demo/evergreen",
+    "language": "HTML",
+    "description": "A hand-built personal website that loads in a blink.",
+    "url": "https://github.com/demo/evergreen",
+    "topics": ["personal-site", "html"],
+    "stars": 184,
+    "forks": 13,
+    "open_issues": 0,
+    "fork": false,
+    "archived": false,
+    "created_at": "2022-03-12T12:00:00Z",
+    "updated_at": "2026-10-17T12:00:00Z",
+    "pushed_at": "2026-10-17T12:00:00Z",
+    "commit_status": "not_sampled",
+    "commits": []
+  },
+  {
+    "name": "old-growth",
+    "full_name": "demo/old-growth",
+    "language": "C",
+    "description": "An archived collection of early graphics experiments.",
+    "url": "https://github.com/demo/old-growth",
+    "topics": ["graphics", "archive"],
+    "stars": 391,
+    "forks": 27,
+    "open_issues": 1,
+    "fork": false,
+    "archived": true,
+    "created_at": "2023-03-12T12:00:00Z",
+    "updated_at": "2026-10-16T12:00:00Z",
+    "pushed_at": "2026-10-16T12:00:00Z",
+    "commit_status": "not_sampled",
+    "commits": []
+  }
+]

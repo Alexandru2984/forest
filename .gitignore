@@ -27,3 +27,8 @@ build/
 # The vendored three.js runtime must survive a clean checkout.
 !public/vendor/three/build/
 !public/vendor/three/build/three.module.js
+
+# Browser reports and local preview artifacts
+test-results/
+playwright-report/
+artifacts/

@@ -1,34 +1,41 @@
-.PHONY: build run test vet fmt check csp-hash clean deploy
+.PHONY: build run test vet fmt fmt-check check frontend security csp-hash clean
 
-BINARY=code-forest-backend
+BINARY ?= build/code-forest
 
 build:
-	go build -ldflags="-s -w" -o $(BINARY) .
+	@mkdir -p "$(dir $(BINARY))"
+	CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o "$(BINARY)" .
 
 run: build
-	./$(BINARY)
+	"./$(BINARY)"
 
 test:
-	go test -v -count=1 -cover ./...
+	go test -race -count=1 -cover ./...
 
 vet:
 	go vet ./...
 
 fmt:
-	gofmt -w .
+	gofmt -w *.go
+	npm run format
 
-# Verify formatting + vet + tests in one shot (mirrors CI).
-check:
-	@test -z "$$(gofmt -l .)" || (echo "gofmt needed:"; gofmt -l .; exit 1)
-	go vet ./...
-	go test -count=1 -cover ./...
+fmt-check:
+	@test -z "$$(gofmt -l *.go)" || (gofmt -l *.go; exit 1)
 
-# Recompute the CSP sha256 for the inline <script type="importmap"> block.
+frontend:
+	npm run format:check
+	npm test
+	npm run check:assets
+
+check: fmt-check vet test frontend
+
+security:
+	go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+	npm audit --audit-level=high
+
+# Informational only: the Go server generates these hashes from embedded HTML.
 csp-hash:
-	@python3 -c "import re,hashlib,base64; h=open('public/index.html').read(); m=re.search(r'<script type=\"importmap\">(.*?)</script>', h, re.S); print('sha256-'+base64.b64encode(hashlib.sha256(m.group(1).encode()).digest()).decode())"
+	@node scripts/csp-hashes.js
 
 clean:
-	rm -f $(BINARY)
-
-deploy: build
-	sudo systemctl restart code-forest
+	rm -f "$(BINARY)"

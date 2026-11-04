@@ -1,159 +1,518 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <meta name="theme-color" content="#030808">
-    <title>Code Forest — Interactive 3D GitHub Visualizer</title>
-    <meta name="description" content="Transform any GitHub profile into a thriving, bioluminescent 3D digital forest. Visualize repositories, commits, and languages in real-time WebGL.">
-    <link rel="canonical" href="https://forest.micutu.com/">
-
-    <!-- Open Graph -->
-    <meta property="og:title" content="Code Forest — Interactive 3D GitHub Visualizer">
-    <meta property="og:description" content="Transform any GitHub profile into a bioluminescent 3D digital forest with real-time WebGL rendering.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://forest.micutu.com">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Code Forest — Interactive 3D GitHub Visualizer">
-    <meta name="twitter:description" content="Transform any GitHub profile into a bioluminescent 3D digital forest with real-time WebGL rendering.">
-
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌲</text></svg>">
-    <link rel="stylesheet" href="/css/style.css">
-
-    <!-- Self-hosted three.js r150 (no CDN / no supply-chain risk) via native import map -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "/vendor/three/build/three.module.js",
-          "three/addons/": "/vendor/three/examples/jsm/"
-        }
-      }
-    </script>
-    <script defer src="https://analytics.micutu.com/script.js" data-website-id="d5b0f7b7-e6d0-4405-8a76-8dff603f6851"></script>
-</head>
-<body>
-    <!-- Loading splash -->
-    <div id="loading-screen">
-        <div class="loading-icon">🌲</div>
-        <div class="loading-title">CODE_FOREST</div>
-        <div class="loading-subtitle">INITIALIZING WEBGL RENDERER…</div>
-        <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-    </div>
-
-    <div id="ui-layer">
-        <div class="top-bar">
-            <div class="top-left">
-                <h1 id="main-title">🌲 CODE_FOREST</h1>
-                <p class="subtitle" id="sub-title">v9.0.0 // SELF-HOSTED · FULL HISTORY · FILTERS</p>
-
-                <!-- Filter Controls -->
-                <div id="filter-panel" class="glass-panel">
-                    <div>
-                        <label for="filter-lang">Lang</label>
-                        <select id="filter-lang" class="glass-input" aria-label="Filter by language">
-                            <option value="">ALL</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter-created">Created after</label>
-                        <input type="date" id="filter-created" class="glass-input" aria-label="Created after date" />
-                    </div>
-                    <div>
-                        <label for="filter-updated">Updated after</label>
-                        <input type="date" id="filter-updated" class="glass-input" aria-label="Updated after date" />
-                    </div>
-                    <button id="filter-btn" class="glass-btn" type="button">Apply</button>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#07130f" />
+        <meta name="color-scheme" content="dark" />
+        <title>Code Forest — Grow a new perspective on your GitHub</title>
+        <meta
+            name="description"
+            content="Explore public GitHub repositories as an interactive 3D forest. Discover languages, search projects, inspect recent commits and save your favorite repositories."
+        />
+        <link rel="canonical" href="https://forest.micutu.com/" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="/css/style.css" />
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "/vendor/three/build/three.module.js",
+                    "three/addons/": "/vendor/three/examples/jsm/"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <a class="skip-link" href="#collection">Skip to repositories</a>
+        <header class="site-header">
+            <a class="brand" href="/"
+                ><span class="brand-mark" aria-hidden="true">♧</span
+                ><span
+                    >code<span class="brand-light">forest</span
+                    ><small>A DIFFERENT KIND OF GROWTH</small></span
+                ></a
+            >
+            <nav aria-label="Main navigation">
+                <button id="demo-button" class="button subtle" type="button">
+                    Try the demo</button
+                ><button id="help-button" class="button subtle" type="button">
+                    Field guide <span aria-hidden="true">↗</span></button
+                ><a
+                    class="header-link"
+                    href="https://github.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >GitHub ↗</a
+                >
+            </nav>
+        </header>
+        <main class="workspace">
+            <aside class="sidebar" aria-label="Profile and filters">
+                <div class="intro">
+                    <p class="eyebrow">YOUR CODE HAS ROOTS</p>
+                    <h1>Every repo.<br />A little more <em>alive.</em></h1>
+                    <p>
+                        Turn a GitHub profile into a living landscape. Find the
+                        projects worth exploring.
+                    </p>
                 </div>
-
-                <!-- Actions toolbar -->
-                <div id="actions" class="glass-panel">
-                    <input type="search" id="repo-search" class="glass-input" placeholder="Find repo…" autocomplete="off" aria-label="Search repositories by name" />
-                    <button id="btn-random" class="glass-btn ghost" type="button" title="Visualize a random famous developer" aria-label="Random famous developer">🎲</button>
-                    <button id="btn-share" class="glass-btn ghost" type="button" title="Copy shareable link" aria-label="Copy shareable link">🔗</button>
-                    <button id="btn-export" class="glass-btn ghost" type="button" title="Export forest as PNG" aria-label="Export PNG">📷</button>
-                    <button id="btn-legend" class="glass-btn ghost" type="button" title="Toggle language legend" aria-label="Toggle language legend" aria-pressed="false">🎨</button>
-                    <button id="btn-orbit" class="glass-btn ghost" type="button" title="Toggle auto-orbit" aria-label="Toggle auto-orbit" aria-pressed="false">⏯</button>
-                    <button id="btn-help" class="glass-btn ghost" type="button" title="Help" aria-label="Help">❓</button>
+                <form id="profile-form" class="profile-form">
+                    <label for="username">GitHub username</label>
+                    <div class="input-action">
+                        <span aria-hidden="true">@</span
+                        ><input
+                            id="username"
+                            name="username"
+                            autocomplete="off"
+                            autocapitalize="none"
+                            spellcheck="false"
+                            maxlength="39"
+                            placeholder="e.g. octocat"
+                            required
+                            aria-describedby="profile-hint"
+                        /><button
+                            id="grow-button"
+                            class="button primary"
+                            type="submit"
+                        >
+                            Grow forest <span aria-hidden="true">↗</span>
+                        </button>
+                    </div>
+                    <p class="hint" id="profile-hint">
+                        Public repositories only. No sign-in needed.
+                    </p>
+                    <details class="token-options">
+                        <summary>Have an API token?</summary>
+                        <label for="token"
+                            >Optional public-read GitHub token</label
+                        ><input
+                            id="token"
+                            type="password"
+                            autocomplete="off"
+                            spellcheck="false"
+                            maxlength="248"
+                            placeholder="Token stays in memory"
+                        />
+                        <p class="hint">
+                            Used only to increase the API budget. Never saved,
+                            shared or included in exports. A token with public
+                            read access is enough.
+                        </p>
+                        <button
+                            id="clear-token"
+                            class="text-button"
+                            type="button"
+                        >
+                            Clear token
+                        </button>
+                    </details>
+                </form>
+                <div class="starter-row">
+                    <span>Take a walk</span
+                    ><button class="starter" data-user="torvalds" type="button">
+                        torvalds</button
+                    ><button
+                        class="starter"
+                        data-user="yyx990803"
+                        type="button"
+                    >
+                        yyx990803</button
+                    ><button
+                        id="random-button"
+                        class="starter"
+                        type="button"
+                        aria-label="Shuffle: explore a random featured developer"
+                    >
+                        Shuffle ↗
+                    </button>
                 </div>
+                <details id="filter-details" class="filter-details" open>
+                    <summary>
+                        <span>Refine your forest</span
+                        ><span class="filter-count" id="active-filters"
+                            >0 active</span
+                        >
+                    </summary>
+                    <div class="filters">
+                        <label for="search">Search repositories</label
+                        ><input
+                            id="search"
+                            type="search"
+                            maxlength="120"
+                            placeholder="Name, description or topic…"
+                            autocomplete="off"
+                        />
+                        <div class="two-fields">
+                            <div>
+                                <label for="language">Language</label
+                                ><select id="language">
+                                    <option value="">All languages</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="sort">Sort by</label
+                                ><select id="sort">
+                                    <option value="updated">
+                                        Recently pushed
+                                    </option>
+                                    <option value="stars">Most stars</option>
+                                    <option value="name">Name A–Z</option>
+                                    <option value="created">
+                                        Newest created
+                                    </option>
+                                    <option value="commits">
+                                        Sampled commits
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="two-fields">
+                            <div>
+                                <label for="min-stars">Minimum stars</label
+                                ><input
+                                    id="min-stars"
+                                    type="number"
+                                    min="0"
+                                    max="10000000"
+                                    step="1"
+                                    value="0"
+                                />
+                            </div>
+                            <div>
+                                <label for="updated">Pushed since</label
+                                ><input id="updated" type="date" />
+                            </div>
+                        </div>
+                        <label for="created">Created since</label
+                        ><input id="created" type="date" />
+                        <label class="check"
+                            ><input id="hide-forks" type="checkbox" /> Hide
+                            forks</label
+                        ><label class="check"
+                            ><input id="hide-archived" type="checkbox" /> Hide
+                            archived projects</label
+                        ><label class="check"
+                            ><input id="favorites-only" type="checkbox" /> Only
+                            my favorites
+                            <span id="favorite-count">0</span></label
+                        >
+                        <button
+                            id="reset-filters"
+                            class="button outline"
+                            type="button"
+                        >
+                            Reset filters
+                        </button>
+                    </div>
+                </details>
+                <p class="privacy-note">
+                    <span aria-hidden="true">◇</span> Built for curiosity.
+                    Favorites stay on this device. No tracking scripts.
+                </p>
+            </aside>
+            <section class="main-column" aria-label="Forest explorer">
+                <div class="profile-heading">
+                    <div>
+                        <p class="eyebrow" id="source-label">
+                            A LITTLE INSPIRATION
+                        </p>
+                        <h2 id="profile-title">
+                            The demo forest<span class="heading-dot">.</span>
+                        </h2>
+                        <p id="profile-description">
+                            A fictional landscape. Real possibilities.
+                        </p>
+                    </div>
+                    <button
+                        id="share-button"
+                        class="button outline"
+                        type="button"
+                    >
+                        Share view ↗
+                    </button>
+                </div>
+                <p id="status" class="status" role="status" aria-live="polite">
+                    Preparing your forest…
+                </p>
+                <div
+                    class="stat-grid"
+                    aria-label="Visible repository statistics"
+                >
+                    <div class="stat">
+                        <span id="stat-repos">0</span
+                        ><small>repositories</small>
+                    </div>
+                    <div class="stat">
+                        <span id="stat-stars">0</span><small>total stars</small>
+                    </div>
+                    <div class="stat">
+                        <span id="stat-languages">0</span
+                        ><small>languages</small>
+                    </div>
+                    <div class="stat">
+                        <span id="stat-commits">0</span
+                        ><small>sampled commits</small>
+                    </div>
+                </div>
+                <section
+                    class="forest-panel"
+                    aria-label="Interactive visualization"
+                >
+                    <div class="forest-toolbar">
+                        <div class="forest-label">
+                            <span class="live-dot"></span> THE LIVING LANDSCAPE
+                        </div>
+                        <div class="forest-actions">
+                            <label class="sr-only" for="quality"
+                                >Rendering quality</label
+                            ><select
+                                id="quality"
+                                aria-label="Rendering quality"
+                            >
+                                <option value="auto">Auto quality</option>
+                                <option value="low">Low power</option>
+                                <option value="high">
+                                    High detail
+                                </option></select
+                            ><button
+                                id="orbit-button"
+                                class="tool-button"
+                                type="button"
+                                aria-label="Toggle automatic orbit"
+                                aria-pressed="false"
+                            >
+                                Orbit</button
+                            ><button
+                                id="pause-button"
+                                class="tool-button"
+                                type="button"
+                                aria-pressed="false"
+                            >
+                                Pause
+                            </button>
+                        </div>
+                    </div>
+                    <div id="forest-stage" class="forest-stage">
+                        <div id="forest-canvas"></div>
+                        <div class="scene-caption">
+                            <span class="eyebrow">A WORLD MADE OF WORK</span>
+                            <p>Small ideas.<br />Deep roots.</p>
+                        </div>
+                        <div id="scene-fallback" class="scene-fallback" hidden>
+                            <p>There’s more than one way to explore.</p>
+                            <span id="fallback-message"
+                                >The repository collection below is ready, even
+                                without 3D.</span
+                            ><button
+                                id="retry-3d"
+                                class="button outline"
+                                type="button"
+                            >
+                                Retry 3D
+                            </button>
+                        </div>
+                        <div
+                            id="scene-tooltip"
+                            class="scene-tooltip"
+                            role="tooltip"
+                            hidden
+                        ></div>
+                        <div class="camera-tools">
+                            <button
+                                id="reset-camera"
+                                class="tool-button"
+                                type="button"
+                            >
+                                ↺ Reset view</button
+                            ><button
+                                id="snapshot-button"
+                                class="tool-button"
+                                type="button"
+                            >
+                                ↓ PNG</button
+                            ><button
+                                id="fullscreen-button"
+                                class="tool-button"
+                                type="button"
+                                aria-label="Toggle visualization fullscreen"
+                            >
+                                ⛶
+                            </button>
+                        </div>
+                    </div>
+                    <div class="forest-footer">
+                        <span
+                            >Drag to orbit · Pinch or scroll to zoom · Select a
+                            tree</span
+                        ><span id="render-status">Preparing 3D</span>
+                    </div>
+                </section>
+                <div class="insights-grid">
+                    <section class="insight-panel">
+                        <div class="section-heading">
+                            <h3>Languages in bloom</h3>
+                            <button
+                                id="all-languages"
+                                class="text-button"
+                                type="button"
+                            >
+                                Show all
+                            </button>
+                        </div>
+                        <div id="language-chart" class="language-chart"></div>
+                        <div id="language-legend" class="language-legend"></div>
+                    </section>
+                    <section class="insight-panel coverage-panel">
+                        <span class="eyebrow">THE VIEW FROM HERE</span>
+                        <p id="coverage">
+                            Each tree is a repository. Glowing leaves represent
+                            recent sampled commits.
+                        </p>
+                        <small id="freshness"
+                            >Demo data · no API requests</small
+                        >
+                    </section>
+                </div>
+                <section
+                    id="collection"
+                    class="collection"
+                    tabindex="-1"
+                    aria-labelledby="collection-title"
+                >
+                    <div class="collection-heading">
+                        <div>
+                            <p class="eyebrow">LOOK A LITTLE CLOSER</p>
+                            <h2 id="collection-title">
+                                The collection
+                                <span id="collection-count">0</span>
+                            </h2>
+                        </div>
+                        <div class="export-tools">
+                            <button
+                                id="json-export"
+                                class="button subtle"
+                                type="button"
+                            >
+                                ↓ JSON</button
+                            ><button
+                                id="csv-export"
+                                class="button subtle"
+                                type="button"
+                            >
+                                ↓ CSV</button
+                            ><button
+                                id="layout-button"
+                                class="button subtle"
+                                type="button"
+                                aria-pressed="false"
+                            >
+                                List view
+                            </button>
+                        </div>
+                    </div>
+                    <div id="repo-list" class="repo-list"></div>
+                    <div id="empty-state" class="empty-state" hidden>
+                        <span aria-hidden="true">♧</span>
+                        <h3>No projects in this clearing.</h3>
+                        <p id="empty-message">
+                            Try another search or reset your filters.
+                        </p>
+                        <button
+                            id="empty-reset"
+                            class="button outline"
+                            type="button"
+                        >
+                            Reset filters
+                        </button>
+                    </div>
+                    <button
+                        id="load-more"
+                        class="button outline load-more"
+                        type="button"
+                        hidden
+                    >
+                        Show more repositories
+                    </button>
+                </section>
+                <footer class="site-footer">
+                    <span
+                        >codeforest <span aria-hidden="true">/</span> A fresh
+                        perspective on open source.</span
+                    ><span
+                        >Public data. Recent commit samples. Plenty to
+                        discover.</span
+                    >
+                </footer>
+            </section>
+        </main>
+        <dialog id="repo-dialog" class="dialog" aria-label="Repository details">
+            <div class="dialog-top">
+                <span class="eyebrow">UNDER THE CANOPY</span
+                ><button
+                    class="dialog-close tool-button"
+                    type="button"
+                    aria-label="Close repository details"
+                >
+                    ✕
+                </button>
             </div>
-
-            <!-- Target User -->
-            <div id="github-form" class="glass-panel">
-                <label for="github-input">Target user</label>
-                <input type="text" id="github-input" value="Alexandru2984" placeholder="e.g. torvalds" autocomplete="off" autocapitalize="off" spellcheck="false" class="glass-input" aria-label="GitHub username" />
-                <label for="github-token">Token (opt)</label>
-                <input type="password" id="github-token" placeholder="ghp_…" autocomplete="off" class="glass-input" aria-label="GitHub personal access token (optional)" />
-                <label class="checkbox-label"><input type="checkbox" id="remember-token" /> Remember</label>
-                <button id="github-submit" class="glass-btn pulse-idle" type="button">Fetch</button>
+            <div id="repo-details"></div>
+        </dialog>
+        <dialog id="help-dialog" class="dialog" aria-label="Field guide">
+            <div class="dialog-top">
+                <span class="eyebrow">YOUR FIELD GUIDE</span
+                ><button
+                    class="dialog-close tool-button"
+                    type="button"
+                    aria-label="Close field guide"
+                >
+                    ✕
+                </button>
             </div>
-        </div>
-
-        <div id="status" role="status" aria-live="polite">READY</div>
-    </div>
-
-    <!-- Camera controls (collapsible) -->
-    <div id="controls-help">
-        <div class="controls-toggle" id="controls-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="controls-body">
-            <span class="chevron">▶</span> CAMERA CONTROLS
-        </div>
-        <div class="controls-body" id="controls-body">
-            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move &nbsp;·&nbsp; <kbd>Q</kbd><kbd>E</kbd> Up / Down<br>
-            <kbd>Drag</kbd> Rotate &nbsp;·&nbsp; <kbd>Scroll</kbd> Zoom<br>
-            <kbd>Hover</kbd> Inspect &nbsp;·&nbsp; <kbd>Click</kbd> Open commit
-        </div>
-    </div>
-
-    <!-- Live stats -->
-    <div id="stats-bar">
-        <div class="stat-item"><span class="stat-label">Repos</span><span class="stat-value" id="stat-repos">0</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-label">Commits</span><span class="stat-value" id="stat-commits">0</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-label">Langs</span><span class="stat-value" id="stat-langs">0</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-label">FPS</span><span class="stat-value" id="stat-fps">--</span></div>
-        <div class="stat-divider"></div>
-        <div class="stat-item"><span class="stat-label" title="GitHub API requests remaining">API</span><span class="stat-value" id="stat-api">—</span></div>
-    </div>
-
-    <!-- Language legend -->
-    <div id="legend" hidden>
-        <div class="legend-title">Languages</div>
-        <div id="legend-list"></div>
-    </div>
-
-    <!-- Help modal -->
-    <div id="help-modal" class="modal-overlay" hidden>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
-            <button id="help-close" class="modal-close" type="button" aria-label="Close help">✕</button>
-            <h2 id="help-title">🌲 Code Forest</h2>
-            <p>Every <strong>tree</strong> is a repository, every glowing <strong>leaf</strong> a commit, and each language paints its own sector of the forest.</p>
-            <h3>Navigation</h3>
-            <ul>
-                <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Q</kbd><kbd>E</kbd> up/down</li>
-                <li><kbd>Drag</kbd> rotate · <kbd>Scroll</kbd> zoom · on mobile use the joystick &amp; pinch</li>
-                <li><kbd>Hover</kbd> a leaf for details · <kbd>Click</kbd> to open the commit</li>
-            </ul>
-            <h3>Tools</h3>
-            <ul>
-                <li>🎲 random famous dev · 🔗 copy a shareable link · 📷 export PNG</li>
-                <li>🎨 language legend · ⏯ auto-orbit · 🔎 find a repo by name</li>
-                <li>Filter by language or date, then <strong>Apply</strong></li>
-            </ul>
-            <p class="modal-foot">Add a GitHub token for private repos &amp; higher rate limits — tick <em>Remember</em> to keep it for this tab only.</p>
-        </div>
-    </div>
-
-    <!-- Mobile: toggle the control panels to reveal the forest -->
-    <button id="panel-toggle" class="icon-btn" type="button" aria-label="Toggle control panels" aria-pressed="false">☰</button>
-
-    <!-- Mobile: on-screen movement joystick -->
-    <div id="joystick" aria-hidden="true"><div class="joystick-knob"></div></div>
-
-    <div id="tooltip" role="tooltip"></div>
-
-    <script type="module" src="/js/app.js"></script>
-</body>
+            <h2>A new way to see your work.</h2>
+            <p>
+                Each tree represents a public GitHub repository. Its color
+                follows its main language. Glowing leaves represent a sample of
+                recent commits. Trees without samples still grow a small canopy.
+            </p>
+            <h3>Make yourself at home</h3>
+            <p>
+                Drag the forest to orbit, scroll or pinch to zoom, and select a
+                tree to inspect a repository. Use the collection for the same
+                details with a keyboard or screen reader. The focused canvas
+                also supports arrow keys to pan.
+            </p>
+            <h3>Follow your curiosity</h3>
+            <p>
+                Search names, descriptions and topics. Filter by language, stars
+                or dates, sort the collection, and save favorites on this
+                device. Select a language in the chart to filter. Details
+                include focus controls and canonical GitHub links.
+            </p>
+            <h3>A considerate view of GitHub</h3>
+            <p>
+                The API returns up to 500 public repositories, with up to 20
+                recent commits per sampled repository. The default sampling
+                budget is 20 repositories and can be lower when GitHub quota
+                runs low. Counts are samples, never a complete contribution
+                history. Cached data lasts up to 10 minutes by default.
+            </p>
+            <p>
+                Tokens are optional and stay in memory. The demo is fictional
+                and makes no GitHub API requests. Share links and exports never
+                include tokens or favorites.
+            </p>
+            <button id="guide-demo" class="button primary" type="button">
+                Explore the demo ↗
+            </button>
+        </dialog>
+        <noscript
+            ><p class="noscript">
+                Code Forest visualizes public GitHub repositories as trees.
+                Enable JavaScript to explore the forest, filter projects and
+                inspect recent commit samples. No sign-in is required.
+            </p></noscript
+        >
+        <script type="module" src="/js/app.js"></script>
+    </body>
 </html>
