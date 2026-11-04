@@ -48,3 +48,9 @@ Baseline Go race tests and binary vulnerability scan are recorded as they comple
 - All HTTP API responses prohibit storage; token cache keys remain isolated. The explorer always strips private repositories, including token-bearing requests.
 - Canonical client IP parsing, a 10,000-bucket cap, capped configuration values, bounded JSON decoding, canonical GitHub commit URLs, stable repository ordering and explicit data-coverage headers have regression coverage.
 - `go test -race -count=1 -cover ./...`: passed, **81.9% statement coverage** after API changes. `go vet ./...`: passed. Baseline tests plus new abuse/cancellation/upstream tests run without external GitHub access.
+
+## Toolchain follow-up
+
+The preinstalled Go 1.26.8 compiler also produced 11 reachable standard-library vulnerability findings in a source scan. The project now requires at least Go 1.26.10 and selects **Go 1.27.3** with its `toolchain` directive; automatic Go toolchain download verifies the upstream distribution. This change is project-local and does not replace the host's global Go installation. Source scan with `golang.org/x/vuln/cmd/govulncheck@v1.9.0` using Go 1.27.3: **No vulnerabilities found**. Race tests and vet pass. Future releases must repeat the scan because this is a point-in-time result.
+
+Same-origin module requests are accepted for the current request origin, including local development. Explicitly disallowed cross-origin requests still return 403. This has regression coverage.

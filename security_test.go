@@ -237,3 +237,19 @@ func TestGitHubRedirectsDisabled(t *testing.T) {
 		t.Fatal("upstream redirects must be disabled")
 	}
 }
+
+func TestCORSSameOriginModulesAndCrossOriginDenial(t *testing.T) {
+	handler := corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }))
+	for _, test := range []struct {
+		origin string
+		want   int
+	}{{"http://127.0.0.1:18089", 200}, {"https://untrusted.example", 403}} {
+		req := httptest.NewRequest("GET", "http://127.0.0.1:18089/js/app.js", nil)
+		req.Header.Set("Origin", test.origin)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		if rec.Code != test.want {
+			t.Errorf("origin %s: status %d want %d", test.origin, rec.Code, test.want)
+		}
+	}
+}

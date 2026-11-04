@@ -245,7 +245,8 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Origin")
 		origin := r.Header.Get("Origin")
-		allowed := origin != "" && cfg.AllowedOrigins[origin]
+		sameOrigin := origin == "http://"+r.Host && r.TLS == nil || origin == "https://"+r.Host && r.TLS != nil
+		allowed := origin != "" && (cfg.AllowedOrigins[origin] || sameOrigin)
 		if origin != "" && !allowed {
 			apiError(w, http.StatusForbidden, "origin_not_allowed", "Origin not allowed")
 			return
