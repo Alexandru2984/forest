@@ -210,6 +210,9 @@ func TestEmbeddedAppAndSecurityHeaders(t *testing.T) {
 	for _, path := range []string{"/", "/vendor/three/build/three.module.js", "/css/style.css"} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if path == "/" && !strings.Contains(rec.Header().Get("Cache-Control"), "no-transform") {
+			t.Fatal("HTML must forbid edge injection that would conflict with CSP hashes")
+		}
 		if rec.Code != 200 || rec.Header().Get("Content-Security-Policy") == "" {
 			t.Fatalf("missing embedded asset or headers at %s: %d", path, rec.Code)
 		}

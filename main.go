@@ -209,6 +209,9 @@ func newHandler() http.Handler {
 			return
 		}
 		w.Header().Set("Cache-Control", "no-cache")
+		if path == "index.html" {
+			w.Header().Set("Cache-Control", "no-cache, no-transform")
+		}
 		files.ServeHTTP(w, r)
 	})
 	return securityHeadersMiddleware(corsMiddleware(newRateLimiter(cfg.RateLimitRPS).middleware(mux)))

@@ -68,3 +68,9 @@ The final app entry and stylesheet use new URLs, with a minimal legacy module th
 CI uses read-only GitHub permissions, full action commit pins, locked development packages, no npm lifecycle scripts, race tests, model/browser/accessibility checks, renderer integrity/import verification and source/npm/vendor-advisory scans. Remote GitHub Actions execution is not claimed until these local commits are pushed and a workflow actually runs.
 
 A shared runtime Unix identity was also identified. The project-specific systemd drop-in selects a dedicated dynamic account; it must pass a sandboxed preview before activation. Host-wide tunnel/account controls and mutually untrusted deployment-owner processes remain outside this app-level isolation.
+
+## Observed Cloudflare transformation and remediation
+
+Public release verification found Cloudflare injecting JavaScript Detections and its analytics beacon into otherwise correct HTML. The strict CSP blocked both, and the app rendered correctly, but edge HTML differed from origin and raised CSP violations. HTML now sends `Cache-Control: no-cache, no-transform`; JavaScript/CSS keep ordinary revalidation so edge compression remains available. This restores the previous vhost's no-transform behavior without permitting arbitrary inline scripts or analytics origins.
+
+Cloudflare documents that no-transform prevents its automatic HTML injections, including JavaScript Detections; consequently that particular bot signal is absent on this HTML. Other edge protection and account/dashboard configuration are not changed by this release. References: https://developers.cloudflare.com/cache/concepts/cache-control/ and https://developers.cloudflare.com/web-analytics/get-started/ . The final public HTML/browser checks are recorded after activation.
