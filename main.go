@@ -3,12 +3,18 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"embed"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
+	"math"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"os/signal"
@@ -20,17 +26,16 @@ import (
 	"time"
 )
 
-const version = "9.0.0"
+const version = "10.0.0"
+const maxIPBuckets = 10000
 
-// SECURITY: Strict GitHub username validation (Max 39 chars, alphanumeric, single hyphens inside)
+//go:embed public
+var publicFiles embed.FS
+
 var validUserRegex = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$`)
-
-// SECURITY: Strict Token validation (Bearer format + safe characters only to prevent CRLF injection)
 var validTokenRegex = regexp.MustCompile(`^Bearer [a-zA-Z0-9_.-]+$`)
-
-// ---------------------------------------------------------------------------
-// Configuration (env-driven, with safe defaults matching the previous build)
-// ---------------------------------------------------------------------------
+var validRepoRegex = regexp.MustCompile(`^[a-zA-Z0-9_.-]{1,100}$`)
+var validSHARegex = regexp.MustCompile(`^[a-fA-F0-9]{7,64}$`)
 
 type Config struct {
 	Port           string
@@ -38,57 +43,50 @@ type Config struct {
 	MaxCacheSize   int
 	MaxCommitRepos int
 	RateLimitRPS   float64
-	GitHubToken    string          // optional server-side fallback (public-only)
-	AllowedOrigins map[string]bool // CORS allow-list
+	FetchTimeout   time.Duration
+	GitHubToken    string
+	AllowedOrigins map[string]bool
 }
 
 func loadConfig() Config {
-	c := Config{
-		Port:           getenvStr("PORT", "8089"),
-		CacheTTL:       getenvDuration("CACHE_TTL", 10*time.Minute),
-		MaxCacheSize:   getenvInt("MAX_CACHE_SIZE", 100),
-		MaxCommitRepos: getenvInt("MAX_COMMIT_REPOS", 60),
-		RateLimitRPS:   getenvFloat("RATE_LIMIT_RPS", 5),
+	return Config{
+		Port:           strconv.Itoa(min(getenvInt("PORT", 8089), 65535)),
+		CacheTTL:       min(getenvDuration("CACHE_TTL", 10*time.Minute), time.Hour),
+		MaxCacheSize:   min(getenvInt("MAX_CACHE_SIZE", 100), 100),
+		MaxCommitRepos: min(getenvInt("MAX_COMMIT_REPOS", 20), 60),
+		RateLimitRPS:   min(getenvFloat("RATE_LIMIT_RPS", 5), 100),
+		FetchTimeout:   min(getenvDuration("FETCH_TIMEOUT", 25*time.Second), 45*time.Second),
 		GitHubToken:    strings.TrimSpace(os.Getenv("GITHUB_TOKEN")),
 		AllowedOrigins: parseOrigins(getenvStr("ALLOWED_ORIGINS", "https://forest.micutu.com")),
 	}
-	return c
 }
-
 func getenvStr(key, def string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
 	}
 	return def
 }
-
 func getenvInt(key string, def int) int {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			return n
-		}
+	n, e := strconv.Atoi(strings.TrimSpace(os.Getenv(key)))
+	if e == nil && n > 0 {
+		return n
 	}
 	return def
 }
-
 func getenvFloat(key string, def float64) float64 {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
-			return f
-		}
+	n, e := strconv.ParseFloat(strings.TrimSpace(os.Getenv(key)), 64)
+	if e == nil && n > 0 && !math.IsInf(n, 0) && !math.IsNaN(n) {
+		return n
 	}
 	return def
 }
-
 func getenvDuration(key string, def time.Duration) time.Duration {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		if d, err := time.ParseDuration(v); err == nil && d > 0 {
-			return d
-		}
+	n, e := time.ParseDuration(strings.TrimSpace(os.Getenv(key)))
+	if e == nil && n > 0 {
+		return n
 	}
 	return def
 }
-
 func parseOrigins(raw string) map[string]bool {
 	m := make(map[string]bool)
 	for _, o := range strings.Split(raw, ",") {
@@ -99,127 +97,134 @@ func parseOrigins(raw string) map[string]bool {
 	return m
 }
 
-// cfg is initialised at package init so handlers/middleware (and tests) can use
-// the defaults without booting the full server.
 var cfg = loadConfig()
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 type StatusResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 	Version string `json:"version"`
 }
-
 type CommitInfo struct {
 	Hash    string `json:"hash"`
 	Message string `json:"message"`
 	URL     string `json:"url"`
+	Date    string `json:"date,omitempty"`
 }
-
 type RepoInfo struct {
-	Name      string       `json:"name"`
-	FullName  string       `json:"full_name"`
-	Language  string       `json:"language"`
-	CreatedAt string       `json:"created_at"`
-	UpdatedAt string       `json:"updated_at"`
-	Stars     int          `json:"stars"`
-	Fork      bool         `json:"fork"`
-	Commits   []CommitInfo `json:"commits"`
+	Name         string       `json:"name"`
+	FullName     string       `json:"full_name"`
+	Language     string       `json:"language"`
+	Description  string       `json:"description"`
+	URL          string       `json:"url"`
+	CreatedAt    string       `json:"created_at"`
+	UpdatedAt    string       `json:"updated_at"`
+	PushedAt     string       `json:"pushed_at"`
+	Stars        int          `json:"stars"`
+	Forks        int          `json:"forks"`
+	OpenIssues   int          `json:"open_issues"`
+	Fork         bool         `json:"fork"`
+	Archived     bool         `json:"archived"`
+	Topics       []string     `json:"topics"`
+	CommitStatus string       `json:"commit_status"`
+	Commits      []CommitInfo `json:"commits"`
 }
-
+type Snapshot struct {
+	Repos         []RepoInfo
+	RateRemaining string
+	Sampled       int
+	Failed        int
+	Truncated     bool
+	FetchedAt     time.Time
+}
 type CacheItem struct {
 	Data      []RepoInfo
 	ExpiresAt time.Time
+	Snapshot  Snapshot
+}
+type flightCall struct {
+	done     chan struct{}
+	snapshot Snapshot
+	err      error
 }
 
 var (
-	cache      = make(map[string]CacheItem)
-	cacheMutex sync.RWMutex
-
-	// SECURITY: Cache Stampede (Thundering Herd) prevention
-	flightGroup      = make(map[string]*sync.WaitGroup)
+	cache            = make(map[string]CacheItem)
+	cacheMutex       sync.RWMutex
+	flightGroup      = make(map[string]*flightCall)
 	flightGroupMutex sync.Mutex
-
-	// SECURITY: Global Resource Exhaustion Limit (Max 10 concurrent user fetches server-wide)
-	globalSem = make(chan struct{}, 10)
-
-	// SECURITY & PERFORMANCE: Reusable connection pool to prevent ephemeral port exhaustion
-	globalClient = &http.Client{
-		Timeout: 45 * time.Second,
+	globalSem        = make(chan struct{}, 10)
+	globalClient     = &http.Client{
+		Timeout:       15 * time.Second,
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 		Transport: &http.Transport{
-			MaxIdleConns:        100,
-			MaxIdleConnsPerHost: 100,
-			IdleConnTimeout:     90 * time.Second,
+			DialContext:         (&net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}).DialContext,
+			TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: 10 * time.Second,
+			MaxConnsPerHost: 40, MaxIdleConns: 40, MaxIdleConnsPerHost: 40, IdleConnTimeout: 90 * time.Second,
 		},
 	}
 )
 
-// ---------------------------------------------------------------------------
-// Server bootstrap
-// ---------------------------------------------------------------------------
-
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.LUTC)
+	srv := &http.Server{Addr: "127.0.0.1:" + cfg.Port, Handler: newHandler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 55 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 14}
+	stopped := make(chan struct{})
+	go func() {
+		defer close(stopped)
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
+		<-ctx.Done()
+		drain, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(drain); err != nil {
+			log.Printf("Shutdown: %v", err)
+			_ = srv.Close()
+		}
+	}()
+	log.Printf("Code Forest %s listening on %s; fetch deadline=%s; commit sample budget=%d", version, srv.Addr, cfg.FetchTimeout, cfg.MaxCommitRepos)
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
+	<-stopped
+}
 
+func newHandler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handleStatus)
 	mux.HandleFunc("/api/", handleStatus)
 	mux.HandleFunc("/api/github", handleGitHub)
 	mux.HandleFunc("/github", handleGitHub)
 	mux.HandleFunc("/health", handleHealth)
-
-	limiter := newRateLimiter(cfg.RateLimitRPS)
-
-	// Middleware chain: security headers -> CORS -> per-IP rate limit -> mux
-	handler := securityHeadersMiddleware(corsMiddleware(limiter.middleware(mux)))
-
-	// SECURITY: Mitigate Slowloris and connection exhaustion via strict timeouts.
-	srv := &http.Server{
-		Addr:           "127.0.0.1:" + cfg.Port,
-		Handler:        handler,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   60 * time.Second,
-		IdleTimeout:    120 * time.Second,
-		MaxHeaderBytes: 1 << 14, // 16KB max header size
-	}
-
-	// Graceful shutdown on SIGINT/SIGTERM
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		sig := <-sigChan
-		log.Printf("Received signal %v, shutting down gracefully...", sig)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Fatalf("Graceful shutdown failed: %v", err)
+	assets, _ := fs.Sub(publicFiles, "public")
+	files := http.FileServer(http.FS(assets))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if !readMethod(w, r) {
+			return
 		}
-		log.Println("Server stopped cleanly.")
-	}()
-
-	tokenMode := "per-user only"
-	if cfg.GitHubToken != "" {
-		tokenMode = "server fallback enabled (public-only)"
-	}
-	log.Printf("🌲 Code Forest Backend (v%s - Hardened) growing on %s | cache=%s/%d | token=%s",
-		version, srv.Addr, cfg.CacheTTL, cfg.MaxCacheSize, tokenMode)
-
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+		path := strings.TrimPrefix(r.URL.Path, "/")
+		if path == "" {
+			path = "index.html"
+		}
+		info, err := fs.Stat(assets, path)
+		if err != nil || info.IsDir() {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-cache")
+		files.ServeHTTP(w, r)
+	})
+	return securityHeadersMiddleware(corsMiddleware(newRateLimiter(cfg.RateLimitRPS).middleware(mux)))
 }
 
-// ---------------------------------------------------------------------------
-// Middleware
-// ---------------------------------------------------------------------------
+var contentSecurityPolicy = func() string {
+	html, _ := publicFiles.ReadFile("public/index.html")
+	match := regexp.MustCompile(`(?s)<script type="importmap">(.*?)</script>`).FindSubmatch(html)
+	script := "'self'"
+	if len(match) > 1 {
+		hash := sha256.Sum256(match[1])
+		script += " 'sha256-" + base64.StdEncoding.EncodeToString(hash[:]) + "'"
+	}
+	return "default-src 'self'; script-src " + script + "; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; worker-src 'none'"
+}()
 
-// securityHeadersMiddleware sets baseline hardening headers on every response.
-// These are defence-in-depth; the edge (nginx) sets the full CSP/HSTS suite.
 func securityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
@@ -227,473 +232,449 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Cross-Origin-Resource-Policy", "same-origin")
+		h.Set("Content-Security-Policy", contentSecurityPolicy)
+		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()")
+		if strings.HasPrefix(r.URL.Path, "/api/") || r.URL.Path == "/github" || r.URL.Path == "/health" {
+			h.Set("Cache-Control", "private, no-store")
+			h.Add("Vary", "Authorization")
+		}
 		next.ServeHTTP(w, r)
 	})
 }
-
-// corsMiddleware applies an Origin allow-list and answers CORS preflight.
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Vary", "Origin")
 		origin := r.Header.Get("Origin")
 		allowed := origin != "" && cfg.AllowedOrigins[origin]
-
-		if allowed {
-			h := w.Header()
-			h.Set("Access-Control-Allow-Origin", origin)
-			h.Set("Access-Control-Expose-Headers", "X-GitHub-RateLimit-Remaining")
-			h.Add("Vary", "Origin")
+		if origin != "" && !allowed {
+			apiError(w, http.StatusForbidden, "origin_not_allowed", "Origin not allowed")
+			return
 		}
-
+		if allowed {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Expose-Headers", "X-GitHub-RateLimit-Remaining, X-Forest-Cache, X-Forest-Sampled, X-Forest-Failed, X-Forest-Truncated, X-Forest-Fetched-At, Retry-After")
+		}
 		if r.Method == http.MethodOptions {
-			if allowed {
-				w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-			}
+			w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
-
-// ---------------------------------------------------------------------------
-// Per-IP token-bucket rate limiter (stdlib only, zero deps)
-// ---------------------------------------------------------------------------
 
 type ipBucket struct {
 	tokens float64
 	last   time.Time
 }
-
 type rateLimiter struct {
-	mu    sync.Mutex
-	ips   map[string]*ipBucket
-	rps   float64
-	burst float64
+	mu         sync.Mutex
+	ips        map[string]*ipBucket
+	rps, burst float64
+	cleaned    time.Time
 }
 
 func newRateLimiter(rps float64) *rateLimiter {
-	rl := &rateLimiter{ips: make(map[string]*ipBucket), rps: rps, burst: rps * 2}
-	go rl.cleanupLoop()
-	return rl
+	return &rateLimiter{ips: make(map[string]*ipBucket), rps: rps, burst: math.Max(1, rps*2)}
 }
-
 func (rl *rateLimiter) allow(ip string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
-
 	now := time.Now()
+	if now.Sub(rl.cleaned) > time.Minute {
+		for key, b := range rl.ips {
+			if now.Sub(b.last) > 10*time.Minute {
+				delete(rl.ips, key)
+			}
+		}
+		rl.cleaned = now
+	}
 	b, ok := rl.ips[ip]
 	if !ok {
+		if len(rl.ips) >= maxIPBuckets {
+			return false
+		}
 		rl.ips[ip] = &ipBucket{tokens: rl.burst - 1, last: now}
 		return true
 	}
-	b.tokens += now.Sub(b.last).Seconds() * rl.rps
-	if b.tokens > rl.burst {
-		b.tokens = rl.burst
-	}
+	b.tokens = math.Min(rl.burst, b.tokens+now.Sub(b.last).Seconds()*rl.rps)
 	b.last = now
-	if b.tokens >= 1 {
-		b.tokens--
-		return true
+	if b.tokens < 1 {
+		return false
 	}
-	return false
+	b.tokens--
+	return true
 }
-
-func (rl *rateLimiter) cleanupLoop() {
-	ticker := time.NewTicker(10 * time.Minute)
-	defer ticker.Stop()
-	for range ticker.C {
-		rl.mu.Lock()
-		now := time.Now()
-		for ip, b := range rl.ips {
-			if now.Sub(b.last) > 10*time.Minute {
-				delete(rl.ips, ip)
-			}
-		}
-		rl.mu.Unlock()
-	}
-}
-
 func (rl *rateLimiter) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" { // never throttle health checks
-			next.ServeHTTP(w, r)
-			return
-		}
-		if !rl.allow(clientIP(r)) {
-			w.Header().Set("Retry-After", "1")
-			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+		if (r.URL.Path == "/api/github" || r.URL.Path == "/github") && !rl.allow(clientIP(r)) {
+			w.Header().Set("Retry-After", strconv.Itoa(max(1, int(math.Ceil(1/rl.rps)))))
+			apiError(w, http.StatusTooManyRequests, "rate_limited", "Too many requests. Please wait and retry.")
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-// clientIP resolves the real client address. The service binds to 127.0.0.1
-// only, so X-Real-IP / X-Forwarded-For are set by the trusted local proxy.
+// Only a local proxy can supply one validated X-Real-IP. It must overwrite it
+// using its authenticated edge address. Arbitrary XFF chains are never trusted.
 func clientIP(r *http.Request) string {
-	if ip := strings.TrimSpace(r.Header.Get("X-Real-IP")); ip != "" {
-		return ip
-	}
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		if i := strings.IndexByte(xff, ','); i >= 0 {
-			return strings.TrimSpace(xff[:i])
-		}
-		return strings.TrimSpace(xff)
-	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return r.RemoteAddr
+		host = r.RemoteAddr
 	}
-	return host
+	peer, err := netip.ParseAddr(host)
+	if err != nil {
+		return "unknown"
+	}
+	if peer.IsLoopback() {
+		if ip, err := netip.ParseAddr(strings.TrimSpace(r.Header.Get("X-Real-IP"))); err == nil && ip.Zone() == "" {
+			return ip.Unmap().String()
+		}
+	}
+	return peer.Unmap().String()
 }
-
-// ---------------------------------------------------------------------------
-// Handlers
-// ---------------------------------------------------------------------------
-
+func readMethod(w http.ResponseWriter, r *http.Request) bool {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		return true
+	}
+	w.Header().Set("Allow", "GET, HEAD, OPTIONS")
+	apiError(w, 405, "method_not_allowed", "Method not allowed")
+	return false
+}
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	if readMethod(w, r) {
+		writeJSON(w, map[string]string{"status": "ok"}, "")
+	}
 }
-
 func handleStatus(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" && r.URL.Path != "/api/" {
-		log.Printf("404 for path: %s", r.URL.Path)
 		http.NotFound(w, r)
 		return
 	}
+	if readMethod(w, r) {
+		writeJSON(w, StatusResponse{Status: "success", Message: "Public GitHub repository explorer with bounded recent commit samples.", Version: version}, "")
+	}
+}
+func apiError(w http.ResponseWriter, status int, code, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(StatusResponse{
-		Status:  "success",
-		Message: "The roots of the Code Forest are active, concurrent, extremely secured (Zero Trust), stampede-proof and caching.",
-		Version: version,
-	})
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"error": map[string]string{"code": code, "message": message}})
 }
-
-func handleGitHub(w http.ResponseWriter, r *http.Request) {
-	// SECURITY: Only GET is allowed (OPTIONS is short-circuited by corsMiddleware).
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", "GET, OPTIONS")
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	user := r.URL.Query().Get("user")
-	if user == "" {
-		http.Error(w, "Missing 'user' parameter", http.StatusBadRequest)
-		return
-	}
-
-	// SECURITY: Strict validation for GitHub usernames.
-	if !isValidGitHubUser(user) {
-		http.Error(w, "Invalid 'user' parameter format", http.StatusBadRequest)
-		return
-	}
-
-	clientToken := r.Header.Get("Authorization")
-	if clientToken != "" {
-		// SECURITY: Prevent CRLF Injection and format violations.
-		if len(clientToken) > 255 || !validTokenRegex.MatchString(clientToken) {
-			http.Error(w, "Invalid 'Authorization' header format", http.StatusBadRequest)
-			return
-		}
-		log.Printf("Received authenticated request for user: %s (Token length: %d)", user, len(clientToken))
-	} else {
-		log.Printf("Received UNAUTHENTICATED request for user: %s", user)
-	}
-
-	// Determine the upstream token and whether we must enforce public-only.
-	// publicOnly is true for every anonymous request; when GITHUB_TOKEN is set
-	// we use it solely to raise GitHub's rate limit, never to expose private repos.
-	upstreamToken := clientToken
-	publicOnly := clientToken == ""
-	if publicOnly && cfg.GitHubToken != "" {
-		upstreamToken = "Bearer " + cfg.GitHubToken
-	}
-
-	// SECURITY: Cache key binds the token so a forged/empty token can never read
-	// a previously cached authenticated (private) response. Anonymous requests
-	// (public-only data) all share the plain `user` key — safe & shareable.
-	cacheKey := user
-	if clientToken != "" {
-		tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(clientToken)))
-		cacheKey = user + "_" + tokenHash
-	}
-
-	const maxRetries = 3
-	retryCount := 0
-
-retry:
-	// 1. Check cache.
-	cacheMutex.RLock()
-	item, found := cache[cacheKey]
-	cacheMutex.RUnlock()
-
-	if found && time.Now().Before(item.ExpiresAt) {
-		log.Printf("Cache HIT for user: %s", user)
-		writeJSON(w, item.Data, "")
-		return
-	}
-
-	// 2. SECURITY: Cache Stampede prevention (singleflight).
-	flightGroupMutex.Lock()
-	if wg, exists := flightGroup[cacheKey]; exists {
-		flightGroupMutex.Unlock()
-		log.Printf("Request deduplication active for user: %s. Waiting...", user)
-		wg.Wait()
-
-		cacheMutex.RLock()
-		item, found = cache[cacheKey]
-		cacheMutex.RUnlock()
-
-		if found && time.Now().Before(item.ExpiresAt) {
-			log.Printf("Cache HIT (Post-Wait) for user: %s", user)
-			writeJSON(w, item.Data, "")
-			return
-		}
-
-		retryCount++
-		if retryCount >= maxRetries {
-			log.Printf("Max retries (%d) exceeded for user: %s", maxRetries, user)
-			http.Error(w, "Service temporarily unavailable, please retry", http.StatusServiceUnavailable)
-			return
-		}
-		goto retry
-	}
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-	flightGroup[cacheKey] = wg
-	flightGroupMutex.Unlock()
-
-	defer func() {
-		flightGroupMutex.Lock()
-		delete(flightGroup, cacheKey)
-		flightGroupMutex.Unlock()
-		wg.Done()
-	}()
-
-	// SECURITY: Protect against global resource exhaustion.
-	select {
-	case globalSem <- struct{}{}:
-	case <-r.Context().Done():
-		log.Printf("Client disconnected before acquiring global slot for user: %s", user)
-		return
-	}
-	defer func() { <-globalSem }()
-
-	// 3. Leader fetches from GitHub.
-	log.Printf("Cache MISS for user: %s, fetching repos from GitHub concurrently...", user)
-
-	repos, rateRemaining, err := fetchGitHubData(r.Context(), user, upstreamToken, publicOnly)
-	if err != nil {
-		log.Printf("Error fetching GitHub data for %s: %v", user, err)
-		// SECURITY: Never expose raw upstream errors to the client.
-		http.Error(w, "Failed to fetch data from GitHub. Please try again later.", http.StatusBadGateway)
-		return
-	}
-
-	// 4. Update cache safely.
-	cacheMutex.Lock()
-	now := time.Now()
-	for k, v := range cache { // purge expired
-		if now.After(v.ExpiresAt) {
-			delete(cache, k)
-		}
-	}
-	if len(cache) >= cfg.MaxCacheSize { // evict the entry closest to expiry
-		evictEarliest()
-	}
-	cache[cacheKey] = CacheItem{Data: repos, ExpiresAt: time.Now().Add(cfg.CacheTTL)}
-	cacheMutex.Unlock()
-
-	writeJSON(w, repos, rateRemaining)
-}
-
-// evictEarliest removes the cache entry with the soonest expiry.
-// Caller must hold cacheMutex.
-func evictEarliest() {
-	var oldestKey string
-	var oldest time.Time
-	first := true
-	for k, v := range cache {
-		if first || v.ExpiresAt.Before(oldest) {
-			oldest = v.ExpiresAt
-			oldestKey = k
-			first = false
-		}
-	}
-	if oldestKey != "" {
-		delete(cache, oldestKey)
-	}
-}
-
-func writeJSON(w http.ResponseWriter, data interface{}, rateRemaining string) {
+func writeJSON(w http.ResponseWriter, data any, rateRemaining string) {
 	if rateRemaining != "" {
 		w.Header().Set("X-GitHub-RateLimit-Remaining", rateRemaining)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
-
 func isValidGitHubUser(user string) bool {
-	return len(user) <= 39 &&
-		validUserRegex.MatchString(user) &&
-		!strings.HasSuffix(user, "-") &&
-		!strings.Contains(user, "--")
+	return len(user) <= 39 && validUserRegex.MatchString(user) && !strings.HasSuffix(user, "-") && !strings.Contains(user, "--")
 }
 
-// ---------------------------------------------------------------------------
-// GitHub fetching
-// ---------------------------------------------------------------------------
+func handleGitHub(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "private, no-store")
+	w.Header().Add("Vary", "Authorization")
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET, OPTIONS")
+		apiError(w, 405, "method_not_allowed", "Method Not Allowed")
+		return
+	}
+	users, exists := r.URL.Query()["user"]
+	if !exists || len(users) == 0 || users[0] == "" {
+		apiError(w, 400, "invalid_user", "Missing 'user' parameter")
+		return
+	}
+	if len(users) != 1 || !isValidGitHubUser(users[0]) {
+		apiError(w, 400, "invalid_user", "Invalid 'user' parameter format")
+		return
+	}
+	user := strings.ToLower(users[0])
+	token := r.Header.Get("Authorization")
+	if len(r.Header.Values("Authorization")) > 1 || (token != "" && (len(token) > 255 || !validTokenRegex.MatchString(token))) {
+		apiError(w, 400, "invalid_token", "Invalid 'Authorization' header format")
+		return
+	}
+	cacheKey := user
+	if token != "" {
+		cacheKey += fmt.Sprintf("_%x", sha256.Sum256([]byte(token)))
+	}
+	if token == "" && cfg.GitHubToken != "" {
+		token = "Bearer " + cfg.GitHubToken
+	}
+	if s, ok := cachedSnapshot(cacheKey); ok {
+		writeSnapshot(w, s, "hit")
+		return
+	}
+
+	flightGroupMutex.Lock()
+	// Close the race between an initial cache read and a completed leader.
+	if s, ok := cachedSnapshot(cacheKey); ok {
+		flightGroupMutex.Unlock()
+		writeSnapshot(w, s, "hit")
+		return
+	}
+	if call, ok := flightGroup[cacheKey]; ok {
+		flightGroupMutex.Unlock()
+		select {
+		case <-r.Context().Done():
+			return
+		case <-call.done:
+			writeFetchResult(w, call.snapshot, call.err, "shared")
+			return
+		}
+	}
+	select {
+	case globalSem <- struct{}{}:
+	default:
+		flightGroupMutex.Unlock()
+		w.Header().Set("Retry-After", "2")
+		apiError(w, 503, "busy", "Service busy. Please retry shortly.")
+		return
+	}
+	call := &flightCall{done: make(chan struct{})}
+	flightGroup[cacheKey] = call
+	flightGroupMutex.Unlock()
+	defer func() {
+		flightGroupMutex.Lock()
+		delete(flightGroup, cacheKey)
+		close(call.done)
+		flightGroupMutex.Unlock()
+		<-globalSem
+	}()
+	ctx, cancel := context.WithTimeout(r.Context(), cfg.FetchTimeout)
+	defer cancel()
+	call.snapshot, call.err = fetchGitHubSnapshot(ctx, user, token)
+	if call.err == nil {
+		cacheMutex.Lock()
+		now := time.Now()
+		for k, v := range cache {
+			if !now.Before(v.ExpiresAt) {
+				delete(cache, k)
+			}
+		}
+		if len(cache) >= cfg.MaxCacheSize {
+			evictEarliest()
+		}
+		cache[cacheKey] = CacheItem{Data: call.snapshot.Repos, Snapshot: call.snapshot, ExpiresAt: now.Add(cfg.CacheTTL)}
+		cacheMutex.Unlock()
+	}
+	writeFetchResult(w, call.snapshot, call.err, "miss")
+}
+func cachedSnapshot(key string) (Snapshot, bool) {
+	cacheMutex.RLock()
+	defer cacheMutex.RUnlock()
+	s, ok := cache[key]
+	return s.Snapshot, ok && time.Now().Before(s.ExpiresAt)
+}
+func evictEarliest() {
+	var key string
+	var oldest time.Time
+	for k, v := range cache {
+		if key == "" || v.ExpiresAt.Before(oldest) {
+			key = k
+			oldest = v.ExpiresAt
+		}
+	}
+	delete(cache, key)
+}
+func writeSnapshot(w http.ResponseWriter, s Snapshot, cacheStatus string) {
+	h := w.Header()
+	h.Set("X-Forest-Cache", cacheStatus)
+	h.Set("X-Forest-Sampled", strconv.Itoa(s.Sampled))
+	h.Set("X-Forest-Failed", strconv.Itoa(s.Failed))
+	h.Set("X-Forest-Truncated", strconv.FormatBool(s.Truncated))
+	h.Set("X-Forest-Fetched-At", s.FetchedAt.UTC().Format(time.RFC3339))
+	writeJSON(w, s.Repos, s.RateRemaining)
+}
+
+type upstreamError struct {
+	status int
+	retry  string
+}
+
+func (e *upstreamError) Error() string { return fmt.Sprintf("GitHub status %d", e.status) }
+func writeFetchResult(w http.ResponseWriter, s Snapshot, err error, source string) {
+	if err == nil {
+		writeSnapshot(w, s, source)
+		return
+	}
+	status, code, message := 502, "upstream_error", "GitHub is temporarily unavailable. Please retry."
+	var upstream *upstreamError
+	if errors.As(err, &upstream) {
+		switch upstream.status {
+		case 404:
+			status, code, message = 404, "user_not_found", "GitHub user not found. Check the username."
+		case 401:
+			status, code, message = 401, "invalid_token", "GitHub rejected the token. Remove or replace it."
+		case 403:
+			status, code, message = 403, "github_forbidden", "GitHub denied this request. Try again later."
+		case 429:
+			status, code, message = 429, "github_rate_limited", "GitHub API budget exhausted. Wait or use a public-read token."
+		}
+		if upstream.retry != "" {
+			w.Header().Set("Retry-After", upstream.retry)
+		}
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		status, code, message = 504, "upstream_timeout", "GitHub took too long. Please retry."
+	}
+	apiError(w, status, code, message)
+}
 
 type RawRepo struct {
-	Name            string `json:"name"`
-	FullName        string `json:"full_name"`
-	Language        string `json:"language"`
-	CreatedAt       string `json:"created_at"`
-	UpdatedAt       string `json:"updated_at"`
-	StargazersCount int    `json:"stargazers_count"`
-	Fork            bool   `json:"fork"`
-	Private         bool   `json:"private"`
+	Name            string   `json:"name"`
+	FullName        string   `json:"full_name"`
+	Language        string   `json:"language"`
+	Description     string   `json:"description"`
+	CreatedAt       string   `json:"created_at"`
+	UpdatedAt       string   `json:"updated_at"`
+	PushedAt        string   `json:"pushed_at"`
+	StargazersCount int      `json:"stargazers_count"`
+	ForksCount      int      `json:"forks_count"`
+	OpenIssues      int      `json:"open_issues_count"`
+	Fork            bool     `json:"fork"`
+	Private         bool     `json:"private"`
+	Archived        bool     `json:"archived"`
+	Topics          []string `json:"topics"`
 }
 
-// fetchGitHubData returns the user's repos (with commits for the most recently
-// pushed MaxCommitRepos) and the remaining GitHub rate-limit budget.
-func fetchGitHubData(ctx context.Context, username, token string, publicOnly bool) ([]RepoInfo, string, error) {
-	var rawRepos []RawRepo
-	var rateRemaining string
-	page := 1
-
-	for {
-		reqURL := fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=100&page=%d&sort=pushed",
-			url.PathEscape(username), page)
-		req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+func githubRequest(ctx context.Context, endpoint, token string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "CodeForest/"+version)
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	if token != "" {
+		req.Header.Set("Authorization", token)
+	}
+	resp, err := globalClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		defer resp.Body.Close()
+		status := resp.StatusCode
+		if status == 403 && (resp.Header.Get("X-RateLimit-Remaining") == "0" || resp.Header.Get("Retry-After") != "") {
+			status = 429
+		}
+		retry := ""
+		if status == 429 {
+			seconds := 60
+			if reset, e := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); e == nil {
+				seconds = int(time.Until(time.Unix(reset, 0)).Seconds()) + 1
+			}
+			if n, e := strconv.Atoi(resp.Header.Get("Retry-After")); e == nil {
+				seconds = n
+			}
+			retry = strconv.Itoa(max(1, min(seconds, 3600)))
+		}
+		return nil, &upstreamError{status: status, retry: retry}
+	}
+	return resp, nil
+}
+func decodeBounded(body io.Reader, limit int64, target any) error {
+	data, err := io.ReadAll(io.LimitReader(body, limit+1))
+	if err != nil {
+		return err
+	}
+	if int64(len(data)) > limit {
+		return errors.New("GitHub payload too large")
+	}
+	return json.Unmarshal(data, target)
+}
+func fetchGitHubSnapshot(ctx context.Context, username, token string) (Snapshot, error) {
+	snapshot := Snapshot{Repos: []RepoInfo{}, FetchedAt: time.Now()}
+	for page := 1; page <= 5; page++ {
+		endpoint := fmt.Sprintf("https://api.github.com/users/%s/repos?per_page=100&page=%d&sort=pushed&type=owner", url.PathEscape(username), page)
+		resp, err := githubRequest(ctx, endpoint, token)
 		if err != nil {
-			return nil, "", err
+			return snapshot, err
 		}
-		req.Header.Set("User-Agent", "CodeForest-Backend")
-		req.Header.Set("Accept", "application/vnd.github+json")
-		if token != "" {
-			req.Header.Set("Authorization", token)
-		}
-
-		resp, err := globalClient.Do(req)
-		if err != nil {
-			return nil, "", err
-		}
-		if rl := resp.Header.Get("X-RateLimit-Remaining"); rl != "" {
-			rateRemaining = rl
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			// SECURITY: bound the error body read to avoid OOM on hostile responses.
-			bodyBytes, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
-			resp.Body.Close()
-			return nil, rateRemaining, fmt.Errorf("github api returned status %d: %s", resp.StatusCode, string(bodyBytes))
-		}
-
-		var pageRepos []RawRepo
-		// SECURITY: cap JSON body at 10MB to avoid OOM on malformed responses.
-		if err := json.NewDecoder(io.LimitReader(resp.Body, 10<<20)).Decode(&pageRepos); err != nil {
-			resp.Body.Close()
-			return nil, rateRemaining, err
-		}
+		snapshot.RateRemaining = resp.Header.Get("X-RateLimit-Remaining")
+		var repos []RawRepo
+		err = decodeBounded(resp.Body, 10<<20, &repos)
 		resp.Body.Close()
-
-		rawRepos = append(rawRepos, pageRepos...)
-
-		// SECURITY: hard stop at 5 pages (500 repos) to bound RAM and API usage.
-		if len(pageRepos) < 100 || page >= 5 {
+		if err != nil {
+			return snapshot, err
+		}
+		if len(repos) > 100 {
+			return snapshot, errors.New("Unexpected GitHub page size")
+		}
+		for _, repo := range repos {
+			// This is a public explorer, including when a token raises its API quota.
+			if repo.Private {
+				continue
+			}
+			parts := strings.Split(repo.FullName, "/")
+			if len(parts) != 2 || !strings.EqualFold(parts[0], username) || !validRepoRegex.MatchString(parts[1]) || parts[1] == "." || parts[1] == ".." {
+				return snapshot, errors.New("Invalid GitHub repository name")
+			}
+			snapshot.Repos = append(snapshot.Repos, toRepoInfo(repo))
+		}
+		if len(repos) < 100 {
 			break
 		}
-		page++
+		if page == 5 {
+			snapshot.Truncated = true
+		}
 	}
-
-	var result []RepoInfo
+	budget := min(cfg.MaxCommitRepos, len(snapshot.Repos))
+	if remaining, err := strconv.Atoi(snapshot.RateRemaining); err == nil {
+		budget = min(budget, max(0, remaining-2))
+	}
+	sem := make(chan struct{}, 2)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-
-	// Higher concurrency when authenticated (5000 req/hr) vs anonymous (60 req/hr).
-	concurrency := 2
-	if token != "" {
-		concurrency = 4
-	}
-	sem := make(chan struct{}, concurrency)
-
-	commitBudget := 0
-	for _, rr := range rawRepos {
-		// SECURITY/PRIVACY: never emit a private repo on a public-only request.
-		if publicOnly && rr.Private {
-			continue
-		}
-
-		repo := toRepoInfo(rr)
-
-		// Only fetch commits for the most-recently-pushed MaxCommitRepos repos
-		// (the list is already sorted by `pushed`) to bound GitHub API calls.
-		if commitBudget >= cfg.MaxCommitRepos {
-			mu.Lock()
-			result = append(result, repo)
-			mu.Unlock()
-			continue
-		}
-		commitBudget++
-
+	for i := 0; i < budget; i++ {
 		wg.Add(1)
-		go func(repo RepoInfo, fullName string) {
+		go func(index int) {
 			defer wg.Done()
-
 			select {
 			case sem <- struct{}{}:
 			case <-ctx.Done():
 				return
 			}
 			defer func() { <-sem }()
-
-			commits, err := fetchCommits(ctx, fullName, token)
-			if err != nil {
-				log.Printf("Warning: Failed to fetch commits for %s: %v", fullName, err)
-			} else {
-				repo.Commits = commits
-			}
-
+			commits, err := fetchCommits(ctx, snapshot.Repos[index].FullName, token)
 			mu.Lock()
-			result = append(result, repo)
-			mu.Unlock()
-		}(repo, rr.FullName)
+			defer mu.Unlock()
+			if err != nil {
+				snapshot.Repos[index].CommitStatus = "unavailable"
+				snapshot.Failed++
+			} else {
+				snapshot.Repos[index].Commits = commits
+				snapshot.Repos[index].CommitStatus = "sampled"
+				snapshot.Sampled++
+				if len(commits) == 0 {
+					snapshot.Repos[index].CommitStatus = "empty"
+				}
+			}
+		}(i)
 	}
-
 	wg.Wait()
-
 	if ctx.Err() != nil {
-		return nil, rateRemaining, ctx.Err()
+		return snapshot, ctx.Err()
 	}
-	return result, rateRemaining, nil
+	// The list endpoint's quota predates the fan-out; subtract scheduled calls.
+	if remaining, err := strconv.Atoi(snapshot.RateRemaining); err == nil {
+		snapshot.RateRemaining = strconv.Itoa(max(0, remaining-budget))
+	}
+	return snapshot, nil
 }
-
 func toRepoInfo(rr RawRepo) RepoInfo {
 	lang := rr.Language
 	if lang == "" {
 		lang = "Unknown"
 	}
-	return RepoInfo{
-		Name:      rr.Name,
-		FullName:  rr.FullName,
-		Language:  lang,
-		CreatedAt: rr.CreatedAt,
-		UpdatedAt: rr.UpdatedAt,
-		Stars:     rr.StargazersCount,
-		Fork:      rr.Fork,
+	topics := rr.Topics
+	if topics == nil {
+		topics = []string{}
 	}
+	return RepoInfo{Name: rr.Name, FullName: rr.FullName, Language: lang, Description: truncateText(rr.Description, 500), URL: "https://github.com/" + rr.FullName, CreatedAt: rr.CreatedAt, UpdatedAt: rr.UpdatedAt, PushedAt: rr.PushedAt, Stars: rr.StargazersCount, Forks: rr.ForksCount, OpenIssues: rr.OpenIssues, Fork: rr.Fork, Archived: rr.Archived, Topics: topics, CommitStatus: "not_sampled", Commits: []CommitInfo{}}
 }
-
-// commitsURL builds the GitHub commits endpoint for "owner/repo", escaping each
-// path segment to prevent request-splitting / SSRF via a hostile full_name.
 func commitsURL(fullName string) string {
 	parts := strings.SplitN(fullName, "/", 2)
 	for i, p := range parts {
@@ -701,64 +682,46 @@ func commitsURL(fullName string) string {
 	}
 	return "https://api.github.com/repos/" + strings.Join(parts, "/") + "/commits?per_page=20"
 }
-
+func truncateText(text string, limit int) string {
+	runes := []rune(text)
+	if len(runes) > limit {
+		return string(runes[:limit-1]) + "…"
+	}
+	return text
+}
 func fetchCommits(ctx context.Context, fullName, token string) ([]CommitInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", commitsURL(fullName), nil)
-	if err != nil {
-		return nil, err
+	resp, err := githubRequest(ctx, commitsURL(fullName), token)
+	var upstream *upstreamError
+	if errors.As(err, &upstream) && upstream.status == 409 {
+		return []CommitInfo{}, nil
 	}
-	req.Header.Set("User-Agent", "CodeForest-Backend")
-	req.Header.Set("Accept", "application/vnd.github+json")
-	if token != "" {
-		req.Header.Set("Authorization", token)
-	}
-
-	resp, err := globalClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d", resp.StatusCode)
-	}
-
-	var rawCommits []struct {
+	var raw []struct {
 		Sha    string `json:"sha"`
 		Commit struct {
 			Message string `json:"message"`
+			Author  struct {
+				Date string `json:"date"`
+			} `json:"author"`
 		} `json:"commit"`
-		HtmlUrl string `json:"html_url"`
 	}
-	// SECURITY: bound commit payload too.
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 5<<20)).Decode(&rawCommits); err != nil {
+	if err := decodeBounded(resp.Body, 5<<20, &raw); err != nil {
 		return nil, err
 	}
-
-	var commits []CommitInfo
-	for _, rc := range rawCommits {
-		msg := rc.Commit.Message
-		// First line only, for a cleaner UI.
-		for i, c := range msg {
-			if c == '\n' || c == '\r' {
-				msg = msg[:i]
-				break
-			}
+	result := make([]CommitInfo, 0, min(20, len(raw)))
+	for _, commit := range raw[:min(20, len(raw))] {
+		if !validSHARegex.MatchString(commit.Sha) {
+			continue
 		}
-		if len(msg) > 100 {
-			msg = msg[:97] + "..."
+		message := strings.FieldsFunc(commit.Commit.Message, func(r rune) bool { return r == '\n' || r == '\r' })
+		title := ""
+		if len(message) > 0 {
+			title = truncateText(message[0], 100)
 		}
-
-		hash := rc.Sha
-		if len(hash) > 7 {
-			hash = hash[:7]
-		}
-
-		commits = append(commits, CommitInfo{
-			Hash:    hash,
-			Message: msg,
-			URL:     rc.HtmlUrl,
-		})
+		result = append(result, CommitInfo{Hash: commit.Sha[:7], Message: title, URL: "https://github.com/" + fullName + "/commit/" + commit.Sha, Date: commit.Commit.Author.Date})
 	}
-	return commits, nil
+	return result, nil
 }

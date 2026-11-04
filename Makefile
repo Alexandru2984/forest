@@ -3,7 +3,7 @@
 BINARY=code-forest-backend
 
 build:
-	go build -ldflags="-s -w" -o $(BINARY) main.go
+	go build -ldflags="-s -w" -o $(BINARY) .
 
 run: build
 	./$(BINARY)

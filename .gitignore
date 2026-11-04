@@ -23,3 +23,7 @@ build/
 .vscode/
 .idea/
 *.swp
+
+# The vendored three.js runtime must survive a clean checkout.
+!public/vendor/three/build/
+!public/vendor/three/build/three.module.js

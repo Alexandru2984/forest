@@ -23,7 +23,7 @@ Date: 2026-11-04. Scope: this repository, its running Go process, relevant reada
 
 - Running unit: `code-forest-canary.service`, loopback listener `127.0.0.1:8089`, non-root account, read-only system protection, no capabilities, memory/task limits. These existing protections are useful.
 - Repository files are in the running service's working directory; public assets must be prepared and validated before activation.
-- A `forest.micutu.com` configuration exists under `sites-available`, but no matching enabled vhost was found during baseline inspection. The public domain responds with this HTML's last-modified date and headers differing from the repository template. The exact public ingress must be verified before changing routing or claiming production delivery.
+- The enabled `forest.micutu.com` vhost serves this checkout’s `public/` and proxies `/api/` to loopback port 8089. Initial recursive searches skipped symlinks; direct vhost inspection corrected that observation. SHA-256 of the public HTML, local HTTPS HTML and checkout HTML matched. Public headers differ from the repository template.
 - Host-wide Cloudflare real-IP configuration already restricts CF headers to known edge peers and local tunnel connections. This host-wide trust still assumes local processes are trusted; the application cannot authenticate a local proxy based on its IP alone.
 - No real credential was printed or copied into this report. No authenticated/private GitHub data was queried.
 
@@ -35,3 +35,16 @@ Baseline Go race tests and binary vulnerability scan are recorded as they comple
 
 - Go security support and vulnerability tooling: https://go.dev/doc/security/ and https://go.dev/doc/security/vuln/
 - GitHub repository endpoint contract: https://docs.github.com/en/rest/repos/repos#list-repositories-for-a-user
+
+## Baseline test and vulnerability results
+
+- Existing `go test -race -count=1 -cover ./...`: passed, 27.1% statement coverage.
+- `govulncheck` binary scan of the running Go 1.22.2 build: **73 standard-library vulnerability reports with affected symbols**. This establishes an outdated vulnerable build, not proof that each issue is exploitable through this application. No additional Go modules were present.
+- The runtime identifies as r150; comparison against the r150 Git tag exposed patch differences. All runtime/addon files were verified and normalized against the official npm three@0.150.1 archive. License and a SHA-256 inventory are now included.
+
+## API remediation verification
+
+- Context-aware singleflight and immediate bounded admission replace the unbounded waiting queue. Upstream operations have a 25-second total deadline, strict transport timeouts and no redirects.
+- All HTTP API responses prohibit storage; token cache keys remain isolated. The explorer always strips private repositories, including token-bearing requests.
+- Canonical client IP parsing, a 10,000-bucket cap, capped configuration values, bounded JSON decoding, canonical GitHub commit URLs, stable repository ordering and explicit data-coverage headers have regression coverage.
+- `go test -race -count=1 -cover ./...`: passed, **81.9% statement coverage** after API changes. `go vet ./...`: passed. Baseline tests plus new abuse/cancellation/upstream tests run without external GitHub access.

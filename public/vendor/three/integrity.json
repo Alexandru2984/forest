@@ -1,0 +1,18 @@
+{
+  "package": "three",
+  "version": "0.150.1",
+  "source": "https://registry.npmjs.org/three/-/three-0.150.1.tgz",
+  "sha256": {
+    "LICENSE": "852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d",
+    "build/three.module.js": "02c8e18af8a24a7e55aa0d1899e68ab5923a9c5dc49964793c4bc06a0b051388",
+    "examples/jsm/controls/OrbitControls.js": "f2dbf54130a40d2369e48481b5e3a26c6f128690fed27a727982b4ec8869811d",
+    "examples/jsm/postprocessing/EffectComposer.js": "9db17abf4291e65a31344b89182c266d32411c53765af3e371d6591c54075401",
+    "examples/jsm/postprocessing/MaskPass.js": "7d5e7e930f4662140d7eb81e78e72a2d872ceb1e990c7c05d0acc590c46cc307",
+    "examples/jsm/postprocessing/Pass.js": "68ffd9b89af536c36c222792f2cebae0f86d45df5c6e6cd305a90d926bf7ce0d",
+    "examples/jsm/postprocessing/RenderPass.js": "f53c0480c46cdb94c9c5b2f35599ac7e4578e9cbd80bff0341d274742452c9b9",
+    "examples/jsm/postprocessing/ShaderPass.js": "eaa540228a6e7072bba80b63533dc6e7dabe0bc771dd261fc728afecf15b71f6",
+    "examples/jsm/postprocessing/UnrealBloomPass.js": "ff5540caf29d327d057310327c610b5ef46457039ec24be4b74eb97e76d2b404",
+    "examples/jsm/shaders/CopyShader.js": "456bf0b9a8f25deda6bf24cff93a82fa209099bd70da0761e340f869c3b3d8cf",
+    "examples/jsm/shaders/LuminosityHighPassShader.js": "57de46c2601ab4f14697608d0825eb0db6d53eae0614365e9ffc90de188790c2"
+  }
+}
