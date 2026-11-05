@@ -74,3 +74,9 @@ A shared runtime Unix identity was also identified. The project-specific systemd
 Public release verification found Cloudflare injecting JavaScript Detections and its analytics beacon into otherwise correct HTML. The strict CSP blocked both, and the app rendered correctly, but edge HTML differed from origin and raised CSP violations. HTML now sends `Cache-Control: no-cache, no-transform`; JavaScript/CSS keep ordinary revalidation so edge compression remains available. This restores the previous vhost's no-transform behavior without permitting arbitrary inline scripts or analytics origins.
 
 Cloudflare documents that no-transform prevents its automatic HTML injections, including JavaScript Detections; consequently that particular bot signal is absent on this HTML. Other edge protection and account/dashboard configuration are not changed by this release. References: https://developers.cloudflare.com/cache/concepts/cache-control/ and https://developers.cloudflare.com/web-analytics/get-started/ . The final public HTML/browser checks are recorded after activation.
+
+## Final production verification — 2026-11-05
+
+The no-transform fix is active. Public and local HTTPS HTML now match exactly. A real browser on the public domain reports zero JavaScript errors, zero CSP violations and zero third-party requests while rendering the demo's 16 projects and 3D canvas. The API's no-store policy, 400 validation response and 403 origin denial were verified through Cloudflare. The production service runs as its dedicated dynamic account, and preview services were removed.
+
+Final Go coverage is **82.0%**; all 7 model and 19 browser scenarios passed. Current source, final binary, npm and vendored-version advisory checks report no known vulnerabilities. See [complete release evidence](RELEASE-2026-11-05.md) for the exact binary/source identities, tested boundaries and remaining operational constraints.

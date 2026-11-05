@@ -1,6 +1,6 @@
 # Code Forest product roadmap
 
-Updated: 2026-11-04. Work is delivered in separate commits under the repository owner's existing Git identity, with no generated attribution or coauthor trailers.
+Updated: 2026-11-05. Work is delivered in separate commits under the repository owner's existing Git identity, with no generated attribution or coauthor trailers.
 
 ## Delivery sequence
 
@@ -26,3 +26,7 @@ Updated: 2026-11-04. Work is delivered in separate commits under the repository 
 ## Acceptance criteria
 
 No credentials in URLs, exports, source control or persistent browser storage. Resource bounds and error states have regression coverage. The explorer works without WebGL. Mobile controls remain reachable at 320px width and in landscape. Commits and repository totals are described accurately: the API returns at most 500 repositories and samples recent commits for a bounded subset, not full Git history. Report both completed work and remaining risks; an audit is not a guarantee of absence of vulnerabilities.
+
+## Delivered release
+
+The first delivery sequence is complete in v10.0.0, verified on the public domain on 2026-11-05. See [release evidence](RELEASE-2026-11-05.md) for the source/binary identity, security scans, 82.0% backend coverage, 7 model tests, 19 browser scenarios and actual edge/runtime checks. SEO assets and the validated CI workflow are committed; remote CI will run after a push. Future product iterations above remain planned work rather than shipped features.
